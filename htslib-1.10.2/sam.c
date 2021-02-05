@@ -586,7 +586,7 @@ static inline int aux_type2size(uint8_t type) {
 }
 
 static void swap_data(const bam1_core_t *c, int l_data, uint8_t *data, int is_host) {
-    uint32_t *cigar = (uint32_t * )(data + c->l_qname);
+    uint32_t *cigar = (uint32_t *) (data + c->l_qname);
     uint32_t i;
     for (i = 0; i < c->n_cigar; ++i) ed_swap_4p(&cigar[i]);
 }
@@ -737,7 +737,7 @@ int bam_write1(BGZF *fp, const bam1_t *b) {
                           bam_get_qname(b), c->n_cigar, cigreflen);
             return -1;
         }
-        cigar_st = (uint8_t * )bam_get_cigar(b) - b->data;
+        cigar_st = (uint8_t *) bam_get_cigar(b) - b->data;
         cigar_en = cigar_st + c->n_cigar * 4;
         cigar[0] = (uint32_t) c->l_qseq << 4 | BAM_CSOFT_CLIP;
         cigar[1] = (uint32_t) cigreflen << 4 | BAM_CREF_SKIP;
@@ -758,6 +758,7 @@ int bam_write1(BGZF *fp, const bam1_t *b) {
  * Write a BAM file and append to the in-memory index simultaneously.
  */
 static int bam_write_idx1(htsFile *fp, const sam_hdr_t *h, const bam1_t *b) {
+    printf("now bam write\n");
     BGZF *bfp = fp->fp.bgzf;
 
     if (!fp->idx)
@@ -1393,10 +1394,10 @@ static sam_hdr_t *sam_hdr_create(htsFile *fp) {
                             if (absent < 0)
                                 goto error;
                             kh_val(long_refs, k2) = ln;
-                            kh_val(d, k) = ((int64_t)(kh_size(d) - 1) << 32
+                            kh_val(d, k) = ((int64_t) (kh_size(d) - 1) << 32
                                             | UINT32_MAX);
                         } else {
-                            kh_val(d, k) = (int64_t)(kh_size(d) - 1) << 32 | ln;
+                            kh_val(d, k) = (int64_t) (kh_size(d) - 1) << 32 | ln;
                         }
                     }
                 } else {
@@ -1472,10 +1473,10 @@ static sam_hdr_t *sam_hdr_create(htsFile *fp) {
                     if (absent < 0)
                         goto error;
                     kh_val(long_refs, k2) = ln;
-                    kh_val(d, k) = ((int64_t)(kh_size(d) - 1) << 32
+                    kh_val(d, k) = ((int64_t) (kh_size(d) - 1) << 32
                                     | UINT32_MAX);
                 } else {
-                    kh_val(d, k) = (int64_t)(kh_size(d) - 1) << 32 | ln;
+                    kh_val(d, k) = (int64_t) (kh_size(d) - 1) << 32 | ln;
                 }
                 has_SQ = 1;
             }
@@ -1925,7 +1926,7 @@ int sam_parse1(kstring_t *s, sam_hdr_t *h, bam1_t *b) {
 #if HTS_ALLOW_UNALIGNED != 0 && ULONG_MAX == 0xffffffffffffffff
 
     // Macro that operates on 64-bits at a time.
-#define COPY_MINUS_N(to,from,n,l,failed)                        \
+#define COPY_MINUS_N(to, from, n, l, failed)                        \
     do {                                                        \
         uint64_u *from8 = (uint64_u *)(from);                   \
         uint64_u *to8 = (uint64_u *)(to);                       \
@@ -1944,7 +1945,7 @@ int sam_parse1(kstring_t *s, sam_hdr_t *h, bam1_t *b) {
 
 #else
 
-// Basic version which operates a byte at a time
+    // Basic version which operates a byte at a time
 #define COPY_MINUS_N(to, from, n, l, failed) do {                \
         uint8_t uflow = 0;                                   \
         for (i = 0; i < (l); ++i) {                          \
@@ -2067,7 +2068,7 @@ int sam_parse1(kstring_t *s, sam_hdr_t *h, bam1_t *b) {
     if (strcmp(q, "*")) {
         _parse_err(p - q - 1 > INT32_MAX, "read sequence is too long");
         c->l_qseq = p - q - 1;
-        hts_pos_t ql = bam_cigar2qlen(c->n_cigar, (uint32_t * )(b->data + c->l_qname));
+        hts_pos_t ql = bam_cigar2qlen(c->n_cigar, (uint32_t *) (b->data + c->l_qname));
         _parse_err(c->n_cigar && ql != c->l_qseq, "CIGAR and query sequence are of different length");
         i = (c->l_qseq + 1) >> 1;
         _get_mem(uint8_t, &t, b, i);
@@ -3242,8 +3243,10 @@ int sam_write1(htsFile *fp, const sam_hdr_t *h, const bam1_t *b) {
             fp->format.category = sequence_data;
             fp->format.format = bam;
             /* fall-through */
-        case bam:
+        case bam: {
+            printf("format bam\n");
             return bam_write_idx1(fp, h, b);
+        }
 
         case cram:
             return cram_put_bam_seq(fp->fp.cram, (bam1_t *) b);
@@ -3252,7 +3255,8 @@ int sam_write1(htsFile *fp, const sam_hdr_t *h, const bam1_t *b) {
             fp->format.category = sequence_data;
             fp->format.format = sam;
             /* fall-through */
-        case sam:
+        case sam: {
+            printf("format sam\n");
             if (fp->state) {
                 SAM_state *fd = (SAM_state *) fp->state;
 
@@ -3362,6 +3366,8 @@ int sam_write1(htsFile *fp, const sam_hdr_t *h, const bam1_t *b) {
 
                 return fp->line.l;
             }
+        }
+
 
         default:
             errno = EBADF;
@@ -4778,7 +4784,7 @@ bam_mplp_t bam_mplp_init(int n, bam_plp_auto_f func, void **data) {
     iter->iter = (bam_plp_t *) calloc(n, sizeof(bam_plp_t));
     iter->n = n;
     iter->min_pos = HTS_POS_MAX;
-    iter->min_tid = (uint32_t) - 1;
+    iter->min_tid = (uint32_t) -1;
     for (i = 0; i < n; ++i) {
         iter->iter[i] = bam_plp_init(func, data[i]);
         iter->pos[i] = iter->min_pos;
@@ -4814,7 +4820,7 @@ void bam_mplp_destroy(bam_mplp_t iter) {
 int bam_mplp64_auto(bam_mplp_t iter, int *_tid, hts_pos_t *_pos, int *n_plp, const bam_pileup1_t **plp) {
     int i, ret = 0;
     hts_pos_t new_min_pos = HTS_POS_MAX;
-    uint32_t new_min_tid = (uint32_t) - 1;
+    uint32_t new_min_tid = (uint32_t) -1;
     for (i = 0; i < iter->n; ++i) {
         if (iter->pos[i] == iter->min_pos && iter->tid[i] == iter->min_tid) {
             int tid;
@@ -4870,11 +4876,11 @@ int bam_mplp_auto(bam_mplp_t iter, int *_tid, int *_pos, int *n_plp, const bam_p
 void bam_mplp_reset(bam_mplp_t iter) {
     int i;
     iter->min_pos = HTS_POS_MAX;
-    iter->min_tid = (uint32_t) - 1;
+    iter->min_tid = (uint32_t) -1;
     for (i = 0; i < iter->n; ++i) {
         bam_plp_reset(iter->iter[i]);
         iter->pos[i] = HTS_POS_MAX;
-        iter->tid[i] = (uint32_t) - 1;
+        iter->tid[i] = (uint32_t) -1;
         iter->n_plp[i] = 0;
         iter->plp[i] = NULL;
     }
