@@ -10,7 +10,7 @@ set(CMAKE_C_COMPILER_ID "GNU")
 
 # The include file search paths:
 set(CMAKE_C_TARGET_INCLUDE_PATH
-  "../htslib-1.10.2"
+  "../htslib-1.11"
   )
 
 # Targets to which this target links.

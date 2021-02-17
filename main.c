@@ -1,3 +1,27 @@
+/*  test/test_view.c -- simple view tool, purely for use in a test harness.
+
+    Copyright (C) 2012 Broad Institute.
+    Copyright (C) 2013-2019 Genome Research Ltd.
+
+    Author: Heng Li <lh3@sanger.ac.uk>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.  */
 
 #include <config.h>
 
@@ -12,6 +36,16 @@
 #include <htslib/sam.h>
 #include <htslib/vcf.h>
 #include <htslib/hts_log.h>
+
+#ifdef _OPENMP
+
+#include <omp.h>
+
+#endif
+
+uint8_t Base[16] = {0, 65, 67, 0, 71, 0, 0, 0, 84, 0, 0, 0, 0, 0, 0, 78};
+uint8_t BaseRever[16] = {0, 84, 71, 0, 67, 0, 0, 0, 65, 0, 0, 0, 0, 0, 0, 78};
+const int MX = 100000000;
 
 struct opts {
     char *fn_ref;
@@ -36,9 +70,7 @@ enum test_op {
     WRITE_COMPRESSED = 32, // eg vcf.gz, sam.gz
 };
 
-int sam_loop(int argc, char **argv, int optind, struct opts *opts, htsFile *in, htsFile *out) {
-    printf("====================sam_loop=========================\n");
-    printf("optind %d\n", optind);
+int sam_loop(int argc, char **argv, int optind, struct opts *opts, htsFile *in, htsFile *out, char *moder) {
     int r = 0;
     sam_hdr_t *h = NULL;
     hts_idx_t *idx = NULL;
@@ -88,8 +120,18 @@ int sam_loop(int argc, char **argv, int optind, struct opts *opts, htsFile *in, 
         }
     }
 
+
+    clock_t t0 = clock();
+    char *outFileName = out->fn;
+    FILE *outStream;
+    if ((outStream = fopen(outFileName, "w+t")) == NULL) {
+        printf("error occur when open %s\n", outFileName);
+        return -1;
+    }
+    int N = 0, M = 0;
+    printf("cost %.5f\n", (clock() - t0) * 1e-6);
+    t0 = clock();
     if (optind + 1 < argc && !(opts->flag & READ_COMPRESSED)) { // BAM input and has a region
-        int i;
         if ((idx = sam_index_load(in, argv[optind])) == 0) {
             fprintf(stderr, "[E::%s] fail to load the BAM index\n", __func__);
             goto fail;
@@ -115,46 +157,177 @@ int sam_loop(int argc, char **argv, int optind, struct opts *opts, htsFile *in, 
             }
         } else {
             printf("single region\n");
-            for (i = optind + 1; i < argc; ++i) {
-                hts_itr_t *iter;
-                if ((iter = sam_itr_querys(idx, h, argv[i])) == 0) {
-                    fprintf(stderr, "[E::%s] fail to parse region '%s'\n", __func__, argv[i]);
-                    goto fail;
+            printf("optind %d argc %d\n", optind, argc);
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+            for (int chr = -1; chr <= 22; chr++) {
+                htsFile *ini = hts_open(argv[optind], moder);
+                if (ini == NULL) {
+                    fprintf(stderr, "Error opening \"%s\"\n", argv[optind]);
+//                    return EXIT_FAILURE;
+                    continue;
                 }
-                while ((r = sam_itr_next(in, iter, b)) >= 0) {
-                    if (!opts->benchmark && sam_write1(out, h, b) < 0) {
-                        fprintf(stderr, "Error writing output.\n");
-                        hts_itr_destroy(iter);
-                        goto fail;
+                uint8_t *seq;
+                uint8_t *qul;
+                char *data = (char *) malloc(MX + 1000);
+                int32_t lseq;
+                char *qname;
+                int Ni = 0, Mi = 0;
+                int nameLen, pos = 0;
+                hts_itr_t *iter;
+                char regi[10];
+                if (chr == -1)sprintf(regi, "chrX");
+                else if (chr == 0)sprintf(regi, "chrY");
+                else
+                    sprintf(regi, "chr%d", chr);
+//                printf("now process %s\n", regi);
+                if ((iter = sam_itr_querys(idx, h, regi)) == 0) {
+                    fprintf(stderr, "[E::%s] fail to parse region '%s'\n", __func__, regi);
+//                    goto fail;
+                    continue;
+                }
+                int res;
+                bam1_t *bi = bam_init1();
+                while ((res = sam_itr_next(ini, iter, bi)) >= 0) {
+
+//                    if (!opts->benchmark && sam_write1(out, h, bi) < 0) {
+//                        fprintf(stderr, "Error writing output.\n");
+//                        hts_itr_destroy(iter);
+//                        goto fail;
+//                    }
+                    Ni++;
+                    if (bi->core.flag & 2048)continue;
+                    Mi++;
+                    seq = bam_get_seq(bi);
+                    qul = bam_get_qual(bi);
+                    qname = bam_get_qname(bi);
+                    nameLen = strlen(qname);
+                    if (pos > MX) {
+                        fwrite(data, sizeof(char), pos, outStream);
+                        pos = 0;
                     }
+                    data[pos++] = '@';
+                    memcpy(data + pos, qname, nameLen);
+                    pos += nameLen;
+                    data[pos++] = '\n';
+                    lseq = bi->core.l_qseq;
+                    if (bi->core.flag & 16) {
+                        for (int i = lseq - 1, j = 0; i >= 0; i--, j++) {
+                            data[pos + j] = BaseRever[bam_seqi(seq, i)];
+                        }
+                        pos += lseq;
+                        data[pos++] = '\n', data[pos++] = '+', data[pos++] = '\n';
+                        for (int i = lseq - 1, j = 0; i >= 0; i--, j++) {
+                            data[pos + j] = qul[i] + 33;
+                        }
+                        pos += lseq;
+                    } else {
+                        for (int i = 0; i < lseq; ++i) {
+                            data[pos + i] = Base[bam_seqi(seq, i)];
+                        }
+                        pos += lseq;
+                        data[pos++] = '\n', data[pos++] = '+', data[pos++] = '\n';
+                        for (int i = 0; i < lseq; ++i) {
+                            data[pos + i] = qul[i] + 33;
+                        }
+                        pos += lseq;
+                    }
+                    data[pos++] = '\n';
                     if (opts->nreads && --opts->nreads == 0)
                         break;
                 }
+                fwrite(data, sizeof(char), pos, outStream);
                 hts_itr_destroy(iter);
-                if (r < -1) {
+                if (res < -1) {
                     fprintf(stderr, "Error reading input.\n");
-                    goto fail;
+                    continue;
+//                    goto fail;
                 }
+                N += Ni, M += Mi;
             }
         }
         hts_idx_destroy(idx);
         idx = NULL;
     } else {
+        uint8_t *seq;
+        uint8_t *qul;
+        char *data = (char *) malloc(MX + 1000);
+        int32_t lseq;
+        char *qname;
+        int N = 0, M = 0;
+        int nameLen, pos = 0;
         printf("no region\n");
-        while ((r = sam_read1(in, h, b)) >= 0) {
-            printf("sam_read1 r :%d\n", r);
-            printf("%d\n", out->format.format);
-            //TODO wht format is sam (out is tt.bam)
-            if (!opts->benchmark && sam_write1(out, h, b) < 0) {
-                fprintf(stderr, "Error writing output.\n");
-                goto fail;
+        printf("in %d\n", in->format.format);
+        printf("out %d\n", out->format.format);
+//        int cnt[1000];
+//        for (int i = 0; i < 1000; i++)cnt[i] = 0;
+        while (1) {
+            struct BGZF *fp = in->fp.bgzf;
+            int r = bam_read1(in->fp.bgzf, b);
+            if (h && r >= 0) {
+                if (b->core.tid >= h->n_targets || b->core.tid < -1 ||
+                    b->core.mtid >= h->n_targets || b->core.mtid < -1) {
+                    errno = ERANGE;
+                    break;
+                }
             }
-            if (opts->nreads && --opts->nreads == 0)
-                break;
+            if (r < 0)break;
+            //            cnt[b->core.tid + 500]++;
+            N++;
+            if (b->core.flag & 2048)continue;
+            M++;
+            seq = bam_get_seq(b);
+            qul = bam_get_qual(b);
+            qname = bam_get_qname(b);
+            nameLen = strlen(qname);
+            if (pos > MX) {
+                fwrite(data, sizeof(char), pos, outStream);
+                pos = 0;
+            }
+            data[pos++] = '@';
+            memcpy(data + pos, qname, nameLen);
+            pos += nameLen;
+            data[pos++] = '\n';
+            lseq = b->core.l_qseq;
+            if (b->core.flag & 16) {
+                for (int i = lseq - 1, j = 0; i >= 0; i--, j++) {
+                    data[pos + j] = BaseRever[bam_seqi(seq, i)];
+                }
+                pos += lseq;
+                data[pos++] = '\n', data[pos++] = '+', data[pos++] = '\n';
+                for (int i = lseq - 1, j = 0; i >= 0; i--, j++) {
+                    data[pos + j] = qul[i] + 33;
+                }
+                pos += lseq;
+            } else {
+                for (int i = 0; i < lseq; ++i) {
+                    data[pos + i] = Base[bam_seqi(seq, i)];
+                }
+                pos += lseq;
+                data[pos++] = '\n', data[pos++] = '+', data[pos++] = '\n';
+                for (int i = 0; i < lseq; ++i) {
+                    data[pos + i] = qul[i] + 33;
+                }
+                pos += lseq;
+            }
+            data[pos++] = '\n';
+//            if (!opts->benchmark && sam_write1(out, h, b) < 0) {
+//                fprintf(stderr, "Error writing output.\n");
+//                goto fail;
+//            }
+//            if (opts->nreads && --opts->nreads == 0)
+//                break;
         }
+        fwrite(data, sizeof(char), pos, outStream);
+
+//        for (int i = 0; i < 1000; i++)
+//            if (cnt[i])printf("%d %d\n", i - 500, cnt[i]);
     }
 
-
+    printf("cost %.5f\n", (clock() - t0) * 1e-6);
+    printf("total process %d reads\n", N);
+    printf("total print %d reads\n", M);
     if (r < -1) {
         fprintf(stderr, "Error parsing input.\n");
         goto fail;
@@ -283,7 +456,6 @@ int main(int argc, char *argv[]) {
     opts.min_shift = 0;
 
     while ((c = getopt(argc, argv, "DSIt:i:bzCul:o:N:BZ:@:Mx:m:p:v")) >= 0) {
-        printf("c %c\n", c);
         switch (c) {
             case 'D':
                 opts.flag |= READ_CRAM;
@@ -347,8 +519,6 @@ int main(int argc, char *argv[]) {
                 break;
         }
     }
-    for (int i = 0; i < argc; i++)printf("%s\n", argv[i]);
-    printf("argc : %d  optind : %d\n", argc, optind);
     if (argc == optind) {
         fprintf(stderr,
                 "Usage: test_view [-DSI] [-t fn_ref] [-i option=value] [-bC] [-l level] [-o option=value] [-N num_reads] [-B] [-Z hdr_nuls] [-@ num_threads] [-x index_fn] [-m min_shift] [-p out] [-v] <in.bam>|<in.sam>|<in.cram> [region]\n");
@@ -383,7 +553,6 @@ int main(int argc, char *argv[]) {
     if (opts.flag & READ_CRAM) strcat(moder, "c");
     else if ((opts.flag & READ_COMPRESSED) == 0) strcat(moder, "b");
 
-    printf("\n\nhts_open in %s\n", argv[optind]);
     in = hts_open(argv[optind], moder);
     if (in == NULL) {
         fprintf(stderr, "Error opening \"%s\"\n", argv[optind]);
@@ -396,8 +565,6 @@ int main(int argc, char *argv[]) {
     else if (opts.flag & WRITE_BINARY_COMP) strcat(modew, "b");
     else if (opts.flag & WRITE_COMPRESSED) strcat(modew, "z");
     else if (opts.flag & WRITE_UNCOMPRESSED) strcat(modew, "bu");
-
-    printf("hts_open out %s\n", out_fn);
     out = hts_open(out_fn, modew);
     if (out == NULL) {
         fprintf(stderr, "Error opening standard output\n");
@@ -429,7 +596,7 @@ int main(int argc, char *argv[]) {
     int ret;
     switch (hts_get_format(in)->category) {
         case sequence_data:
-            ret = sam_loop(argc, argv, optind, &opts, in, out);
+            ret = sam_loop(argc, argv, optind, &opts, in, out, moder);
             break;
 
         case variant_data:

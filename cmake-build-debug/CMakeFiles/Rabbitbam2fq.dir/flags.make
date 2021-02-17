@@ -6,5 +6,5 @@ C_FLAGS = -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacO
 
 C_DEFINES = 
 
-C_INCLUDES = -I/Users/ylf9811/ClionProjects/Rabbitbam2fq/htslib-1.10.2 
+C_INCLUDES = -I/Users/ylf9811/ClionProjects/Rabbitbam2fq/htslib-1.11 
 

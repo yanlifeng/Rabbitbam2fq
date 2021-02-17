@@ -1,1 +1,1 @@
-./main -p tt.bam $data/hg19/SRR_sort.bam
+time ./main -p tt.fq $data/hg19/SRR_sort.bam
