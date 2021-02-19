@@ -1,1 +1,1 @@
-rm -rf main main.dSYM 
+rm -rf main tt* 

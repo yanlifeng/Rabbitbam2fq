@@ -8,7 +8,7 @@ static_libs=-lpthread -lz -lm -lbz2 -llzma -lcurl
 
 Name: htslib
 Description: C library for high-throughput sequencing data formats
-Version: 1.10.2
+Version: 1.11
 Cflags: -I${includedir}
 Libs: -L${libdir} -lhts
 Libs.private: -L${libdir}  -lbz2 -lhts -lm -lpthread

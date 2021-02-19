@@ -1,28 +1,3 @@
-/*  test/test_view.c -- simple view tool, purely for use in a test harness.
-
-    Copyright (C) 2012 Broad Institute.
-    Copyright (C) 2013-2019 Genome Research Ltd.
-
-    Author: Heng Li <lh3@sanger.ac.uk>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.  */
-
 #include <config.h>
 
 #include <stdio.h>
@@ -45,7 +20,7 @@ DEALINGS IN THE SOFTWARE.  */
 
 uint8_t Base[16] = {0, 65, 67, 0, 71, 0, 0, 0, 84, 0, 0, 0, 0, 0, 0, 78};
 uint8_t BaseRever[16] = {0, 84, 71, 0, 67, 0, 0, 0, 65, 0, 0, 0, 0, 0, 0, 78};
-const int MX = 100000000;
+const int MX = 10000000;
 
 struct opts {
     char *fn_ref;
@@ -131,131 +106,109 @@ int sam_loop(int argc, char **argv, int optind, struct opts *opts, htsFile *in, 
     int N = 0, M = 0;
     printf("cost %.5f\n", (clock() - t0) * 1e-6);
     t0 = clock();
-    if (optind + 1 < argc && !(opts->flag & READ_COMPRESSED)) { // BAM input and has a region
+
+    int tag = 1;
+    if (tag) {
         if ((idx = sam_index_load(in, argv[optind])) == 0) {
             fprintf(stderr, "[E::%s] fail to load the BAM index\n", __func__);
             goto fail;
         }
-        if (opts->multi_reg) {
-            printf("multi region\n");
-            hts_itr_t *iter = sam_itr_regarray(idx, h, &argv[optind + 1], argc - optind - 1);
-            if (!iter)
-                goto fail;
-            while ((r = sam_itr_next(in, iter, b)) >= 0) {
-                if (!opts->benchmark && sam_write1(out, h, b) < 0) {
-                    fprintf(stderr, "Error writing output.\n");
-                    hts_itr_destroy(iter);
-                    goto fail;
-                }
-                if (opts->nreads && --opts->nreads == 0)
-                    break;
-            }
-            hts_itr_destroy(iter);
-            if (r < -1) {
-                fprintf(stderr, "Error reading input.\n");
-                goto fail;
-            }
-        } else {
-            printf("single region\n");
-            printf("optind %d argc %d\n", optind, argc);
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-            for (int chr = -1; chr <= 22; chr++) {
-                htsFile *ini = hts_open(argv[optind], moder);
-                if (ini == NULL) {
-                    fprintf(stderr, "Error opening \"%s\"\n", argv[optind]);
-//                    return EXIT_FAILURE;
-                    continue;
-                }
-                uint8_t *seq;
-                uint8_t *qul;
-                char *data = (char *) malloc(MX + 1000);
-                int32_t lseq;
-                char *qname;
-                int Ni = 0, Mi = 0;
-                int nameLen, pos = 0;
-                hts_itr_t *iter;
-                char regi[10];
-                if (chr == -1)sprintf(regi, "chrX");
-                else if (chr == 0)sprintf(regi, "chrY");
-                else
-                    sprintf(regi, "chr%d", chr);
-//                printf("now process %s\n", regi);
-                if ((iter = sam_itr_querys(idx, h, regi)) == 0) {
-                    fprintf(stderr, "[E::%s] fail to parse region '%s'\n", __func__, regi);
-//                    goto fail;
-                    continue;
-                }
-                int res;
-                bam1_t *bi = bam_init1();
-                while ((res = sam_itr_next(ini, iter, bi)) >= 0) {
+        printf("cost %.5f\n", (clock() - t0) * 1e-6);
+        t0 = clock();
+        printf("single region\n");
+        printf("optind %d argc %d\n", optind, argc);
 
-//                    if (!opts->benchmark && sam_write1(out, h, bi) < 0) {
-//                        fprintf(stderr, "Error writing output.\n");
-//                        hts_itr_destroy(iter);
-//                        goto fail;
-//                    }
-                    Ni++;
-                    if (bi->core.flag & 2048)continue;
-                    Mi++;
-                    seq = bam_get_seq(bi);
-                    qul = bam_get_qual(bi);
-                    qname = bam_get_qname(bi);
-                    nameLen = strlen(qname);
-                    if (pos > MX) {
-                        fwrite(data, sizeof(char), pos, outStream);
-                        pos = 0;
-                    }
-                    data[pos++] = '@';
-                    memcpy(data + pos, qname, nameLen);
-                    pos += nameLen;
-                    data[pos++] = '\n';
-                    lseq = bi->core.l_qseq;
-                    if (bi->core.flag & 16) {
-                        for (int i = lseq - 1, j = 0; i >= 0; i--, j++) {
-                            data[pos + j] = BaseRever[bam_seqi(seq, i)];
-                        }
-                        pos += lseq;
-                        data[pos++] = '\n', data[pos++] = '+', data[pos++] = '\n';
-                        for (int i = lseq - 1, j = 0; i >= 0; i--, j++) {
-                            data[pos + j] = qul[i] + 33;
-                        }
-                        pos += lseq;
-                    } else {
-                        for (int i = 0; i < lseq; ++i) {
-                            data[pos + i] = Base[bam_seqi(seq, i)];
-                        }
-                        pos += lseq;
-                        data[pos++] = '\n', data[pos++] = '+', data[pos++] = '\n';
-                        for (int i = 0; i < lseq; ++i) {
-                            data[pos + i] = qul[i] + 33;
-                        }
-                        pos += lseq;
-                    }
-                    data[pos++] = '\n';
-                    if (opts->nreads && --opts->nreads == 0)
-                        break;
-                }
-                fwrite(data, sizeof(char), pos, outStream);
-                hts_itr_destroy(iter);
-                if (res < -1) {
-                    fprintf(stderr, "Error reading input.\n");
-                    continue;
-//                    goto fail;
-                }
-                N += Ni, M += Mi;
+//        double cost1 = 0, cost2 = 0;
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(1)
+#endif
+        for (int chr = -2; chr <= 22; chr++) {
+            htsFile *ini = hts_open(argv[optind], moder);
+            if (ini == NULL) {
+                fprintf(stderr, "Error opening \"%s\"\n", argv[optind]);
+                continue;
             }
+            uint8_t *seq;
+            uint8_t *qul;
+            char *data = (char *) malloc(MX + 1000);
+            int32_t lseq;
+            char *qname;
+            int Ni = 0, Mi = 0;
+            int nameLen, pos = 0;
+            hts_itr_t *iter;
+            char regi[10];
+            if (chr == -2)sprintf(regi, "*");
+            else if (chr == -1)sprintf(regi, "chrX");
+            else if (chr == 0)sprintf(regi, "chrY");
+            else
+                sprintf(regi, "chr%d", chr);
+            if ((iter = sam_itr_querys(idx, h, regi)) == 0) {
+                fprintf(stderr, "[E::%s] fail to parse region '%s'\n", __func__, regi);
+                continue;
+            }
+            int res;
+            bam1_t *bi = bam_init1();
+            while ((res = sam_itr_next(ini, iter, bi)) >= 0) {
+                Ni++;
+                if (bi->core.flag & 2048)continue;
+                Mi++;
+                seq = bam_get_seq(bi);
+                qul = bam_get_qual(bi);
+                qname = bam_get_qname(bi);
+                nameLen = strlen(qname);
+                if (pos > MX) {
+//                    fwrite(data, sizeof(char), pos, outStream);
+                    pos = 0;
+                }
+                data[pos++] = '@';
+                memcpy(data + pos, qname, nameLen);
+                pos += nameLen;
+                data[pos++] = '\n';
+                lseq = bi->core.l_qseq;
+                if (bi->core.flag & 16) {
+                    for (int i = lseq - 1, j = 0; i >= 0; i--, j++) {
+                        data[pos + j] = BaseRever[bam_seqi(seq, i)];
+                    }
+                    pos += lseq;
+                    data[pos++] = '\n', data[pos++] = '+', data[pos++] = '\n';
+                    for (int i = lseq - 1, j = 0; i >= 0; i--, j++) {
+                        data[pos + j] = qul[i] + 33;
+                    }
+                    pos += lseq;
+                } else {
+                    for (int i = 0; i < lseq; ++i) {
+                        data[pos + i] = Base[bam_seqi(seq, i)];
+                    }
+                    pos += lseq;
+                    data[pos++] = '\n', data[pos++] = '+', data[pos++] = '\n';
+                    for (int i = 0; i < lseq; ++i) {
+                        data[pos + i] = qul[i] + 33;
+                    }
+                    pos += lseq;
+                }
+                data[pos++] = '\n';
+            }
+//            fwrite(data, sizeof(char), pos, outStream);
+            hts_itr_destroy(iter);
+            bam_destroy1(bi);
+            if (res < -1) {
+                fprintf(stderr, "Error reading input.\n");
+                continue;
+            }
+            N += Ni, M += Mi;
+            free(data);
         }
+        printf("cost %.5f\n", (clock() - t0) * 1e-6);
+        t0 = clock();
         hts_idx_destroy(idx);
         idx = NULL;
     } else {
+
         uint8_t *seq;
         uint8_t *qul;
         char *data = (char *) malloc(MX + 1000);
         int32_t lseq;
         char *qname;
-        int N = 0, M = 0;
         int nameLen, pos = 0;
         printf("no region\n");
         printf("in %d\n", in->format.format);
@@ -312,12 +265,6 @@ int sam_loop(int argc, char **argv, int optind, struct opts *opts, htsFile *in, 
                 pos += lseq;
             }
             data[pos++] = '\n';
-//            if (!opts->benchmark && sam_write1(out, h, b) < 0) {
-//                fprintf(stderr, "Error writing output.\n");
-//                goto fail;
-//            }
-//            if (opts->nreads && --opts->nreads == 0)
-//                break;
         }
         fwrite(data, sizeof(char), pos, outStream);
 
@@ -350,88 +297,6 @@ int sam_loop(int argc, char **argv, int optind, struct opts *opts, htsFile *in, 
     if (idx) hts_idx_destroy(idx);
 
     return 1;
-}
-
-int vcf_loop(int argc, char **argv, int optind, struct opts *opts, htsFile *in, htsFile *out) {
-    bcf_hdr_t *h = bcf_hdr_read(in);
-    bcf1_t *b = bcf_init1();
-    hts_idx_t *idx;
-    int i, exit_code = 0, r = 0;
-
-    if (!h)
-        return 1;
-    if (!b)
-        return 1;
-
-    if (!opts->benchmark && bcf_hdr_write(out, h) < 0)
-        return 1;
-
-    if (opts->index) {
-        if (bcf_idx_init(out, h, opts->min_shift, opts->index) < 0) {
-            fprintf(stderr, "Failed to initialise index\n");
-            return 1;
-        }
-    }
-
-    if (optind + 1 < argc) {
-        // A series of regions.
-        if ((idx = bcf_index_load(argv[optind])) == 0) {
-            fprintf(stderr, "[E::%s] fail to load the BVCF index\n", __func__);
-            return 1;
-        }
-
-        for (i = optind + 1; i < argc; i++) {
-            hts_itr_t *iter;
-            if ((iter = bcf_itr_querys(idx, h, argv[i])) == 0) {
-                fprintf(stderr, "[E::%s] fail to parse region '%s'\n", __func__, argv[i]);
-                continue;
-            }
-            while ((r = bcf_itr_next(in, iter, b)) >= 0) {
-                if (!opts->benchmark && bcf_write1(out, h, b) < 0) {
-                    fprintf(stderr, "Error writing output.\n");
-                    exit_code = 1;
-                    break;
-                }
-                if (opts->nreads && --opts->nreads == 0)
-                    break;
-            }
-            if (r < -1) {
-                fprintf(stderr, "Error reading input.\n");
-                exit_code = 1;
-            }
-            hts_itr_destroy(iter);
-            if (exit_code != 0) break;
-        }
-
-        hts_idx_destroy(idx);
-
-    } else {
-        // Whole file
-        while ((r = bcf_read1(in, h, b)) >= 0) {
-            if (!opts->benchmark && bcf_write1(out, h, b) < 0) {
-                fprintf(stderr, "Error writing output.\n");
-                exit_code = 1;
-                break;
-            }
-            if (opts->nreads && --opts->nreads == 0)
-                break;
-        }
-        if (r < -1) {
-            fprintf(stderr, "Error reading input.\n");
-            exit_code = 1;
-        }
-    }
-
-    if (exit_code == 0 && opts->index) {
-        if (bcf_idx_save(out) < 0) {
-            fprintf(stderr, "Error saving index\n");
-            exit_code = 1;
-        }
-    }
-
-    bcf_destroy1(b);
-    bcf_hdr_destroy(h);
-    return exit_code;
 }
 
 int main(int argc, char *argv[]) {
@@ -599,9 +464,6 @@ int main(int argc, char *argv[]) {
             ret = sam_loop(argc, argv, optind, &opts, in, out, moder);
             break;
 
-        case variant_data:
-            ret = vcf_loop(argc, argv, optind, &opts, in, out);
-            break;
 
         default:
             fprintf(stderr, "Unsupported or unknown category of data in input file\n");
