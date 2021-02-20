@@ -99,201 +99,69 @@ int sam_loop(int argc, char **argv, int optind, struct opts *opts, htsFile *in, 
     }
 
 
-    clock_t t0 = clock();
     char *outFileName = out->fn;
     ofstream outStream;
     outStream.open(outFileName, ifstream::out);
     int N = 0, M = 0;
-    printf("cost %.5f\n", (clock() - t0) * 1e-6);
-    t0 = clock();
-
-    int tag = 1;
-    if (tag) {
-        if ((idx = sam_index_load(in, argv[optind])) == 0) {
-            fprintf(stderr, "[E::%s] fail to load the BAM index\n", __func__);
-            return -1;
+    uint8_t *seq;
+    uint8_t *qul;
+    char *data = new char[MX + 10000];
+    int32_t lseq;
+    char *qname;
+    int nameLen, pos = 0;
+    while (1) {
+        struct BGZF *fp = in->fp.bgzf;
+        int r = bam_read1(in->fp.bgzf, b);
+        if (h && r >= 0) {
+            if (b->core.tid >= h->n_targets || b->core.tid < -1 ||
+                b->core.mtid >= h->n_targets || b->core.mtid < -1) {
+                errno = ERANGE;
+                break;
+            }
         }
-        printf("cost %.5f\n", (clock() - t0) * 1e-6);
-        t0 = clock();
-        printf("single region\n");
-        printf("optind %d argc %d\n", optind, argc);
-
-//        double cost1 = 0, cost2 = 0;
-#ifdef _OPENMP
-        omp_lock_t writelock;
-        omp_init_lock(&writelock);
-#pragma omp parallel for num_threads(1)
-#endif
-        for (int chr = -2; chr <= 22; chr++) {
-            htsFile *ini = hts_open(argv[optind], moder);
-            if (ini == NULL) {
-                fprintf(stderr, "Error opening \"%s\"\n", argv[optind]);
-                continue;
-            }
-            uint8_t *seq;
-            uint8_t *qul;
-            char *data = new char[MX + 10000];
-            int32_t lseq;
-            char *qname;
-            int Ni = 0, Mi = 0;
-            int nameLen, pos = 0;
-            hts_itr_t *iter;
-            char regi[10];
-            if (chr == -2)sprintf(regi, "*");
-            else if (chr == -1)sprintf(regi, "chrX");
-            else if (chr == 0)sprintf(regi, "chrY");
-            else
-                sprintf(regi, "chr%d", chr);
-            if ((iter = sam_itr_querys(idx, h, regi)) == 0) {
-                fprintf(stderr, "[E::%s] fail to parse region '%s'\n", __func__, regi);
-                continue;
-            }
-            int res;
-            bam1_t *bi = bam_init1();
-            while ((res = sam_itr_next(ini, iter, bi)) >= 0) {
-                Ni++;
-                if (bi->core.flag & 2048)continue;
-                Mi++;
-                seq = bam_get_seq(bi);
-                qul = bam_get_qual(bi);
-                qname = bam_get_qname(bi);
-                nameLen = strlen(qname);
-                if (pos > MX) {
-#ifdef _OPENMP
-                    omp_set_lock(&writelock);
-#endif
-                    outStream.write(data, pos);
-#ifdef _OPENMP
-                    omp_unset_lock(&writelock);
-#endif
-                    pos = 0;
-                }
-                data[pos++] = '@';
-                memcpy(data + pos, qname, nameLen);
-                pos += nameLen;
-                data[pos++] = '\n';
-                lseq = bi->core.l_qseq;
-                if (bi->core.flag & 16) {
-                    for (int i = lseq - 1, j = 0; i >= 0; i--, j++) {
-                        data[pos + j] = BaseRever[bam_seqi(seq, i)];
-                    }
-                    pos += lseq;
-                    data[pos++] = '\n', data[pos++] = '+', data[pos++] = '\n';
-                    for (int i = lseq - 1, j = 0; i >= 0; i--, j++) {
-                        data[pos + j] = char(qul[i] + 33);
-                    }
-                    pos += lseq;
-                } else {
-                    for (int i = 0; i < lseq; ++i) {
-                        data[pos + i] = Base[bam_seqi(seq, i)];
-                    }
-                    pos += lseq;
-                    data[pos++] = '\n', data[pos++] = '+', data[pos++] = '\n';
-                    for (int i = 0; i < lseq; ++i) {
-                        data[pos + i] = char(qul[i] + 33);
-                    }
-                    pos += lseq;
-                }
-                data[pos++] = '\n';
-            }
-#ifdef _OPENMP
-            omp_set_lock(&writelock);
-#endif
+        if (r < 0)break;
+        N++;
+        if (b->core.flag & 2048)continue;
+        M++;
+        seq = bam_get_seq(b);
+        qul = bam_get_qual(b);
+        qname = bam_get_qname(b);
+        nameLen = b->core.l_qname - b->core.l_extranul - 1;
+        if (pos > MX) {
             outStream.write(data, pos);
-#ifdef _OPENMP
-            omp_unset_lock(&writelock);
-#endif
-            hts_itr_destroy(iter);
-            bam_destroy1(bi);
-            if (res < -1) {
-                fprintf(stderr, "Error reading input.\n");
-                continue;
-            }
-#ifdef _OPENMP
-            omp_set_lock(&writelock);
-#endif
-            N += Ni, M += Mi;
-#ifdef _OPENMP
-            omp_unset_lock(&writelock);
-#endif
-            delete data;
+            pos = 0;
         }
-        printf("cost %.5f\n", (clock() - t0) * 1e-6);
-        t0 = clock();
-        hts_idx_destroy(idx);
-        idx = NULL;
-        omp_destroy_lock(&writelock);
-    } else {
-
-        uint8_t *seq;
-        uint8_t *qul;
-        char *data = new char[MX + 10000];
-        int32_t lseq;
-        char *qname;
-        int nameLen, pos = 0;
-        printf("no region\n");
-        printf("in %d\n", in->format.format);
-        printf("out %d\n", out->format.format);
-//        int cnt[1000];
-//        for (int i = 0; i < 1000; i++)cnt[i] = 0;
-        while (1) {
-            struct BGZF *fp = in->fp.bgzf;
-            int r = bam_read1(in->fp.bgzf, b);
-            if (h && r >= 0) {
-                if (b->core.tid >= h->n_targets || b->core.tid < -1 ||
-                    b->core.mtid >= h->n_targets || b->core.mtid < -1) {
-                    errno = ERANGE;
-                    break;
-                }
+        data[pos++] = '@';
+        memcpy(data + pos, qname, nameLen);
+        pos += nameLen;
+        data[pos++] = '\n';
+        lseq = b->core.l_qseq;
+        if (b->core.flag & 16) {
+            for (int i = lseq - 1, j = 0; i >= 0; i--, j++) {
+                data[pos + j] = BaseRever[bam_seqi(seq, i)];
             }
-            if (r < 0)break;
-            //            cnt[b->core.tid + 500]++;
-            N++;
-            if (b->core.flag & 2048)continue;
-            M++;
-            seq = bam_get_seq(b);
-            qul = bam_get_qual(b);
-            qname = bam_get_qname(b);
-            nameLen = strlen(qname);
-            if (pos > MX) {
-                outStream.write(data, pos);
-                pos = 0;
+            pos += lseq;
+            data[pos++] = '\n', data[pos++] = '+', data[pos++] = '\n';
+            for (int i = lseq - 1, j = 0; i >= 0; i--, j++) {
+                data[pos + j] = char(qul[i] + 33);
             }
-            data[pos++] = '@';
-            memcpy(data + pos, qname, nameLen);
-            pos += nameLen;
-            data[pos++] = '\n';
-            lseq = b->core.l_qseq;
-            if (b->core.flag & 16) {
-                for (int i = lseq - 1, j = 0; i >= 0; i--, j++) {
-                    data[pos + j] = BaseRever[bam_seqi(seq, i)];
-                }
-                pos += lseq;
-                data[pos++] = '\n', data[pos++] = '+', data[pos++] = '\n';
-                for (int i = lseq - 1, j = 0; i >= 0; i--, j++) {
-                    data[pos + j] = char(qul[i] + 33);
-                }
-                pos += lseq;
-            } else {
-                for (int i = 0; i < lseq; ++i) {
-                    data[pos + i] = Base[bam_seqi(seq, i)];
-                }
-                pos += lseq;
-                data[pos++] = '\n', data[pos++] = '+', data[pos++] = '\n';
-                for (int i = 0; i < lseq; ++i) {
-                    data[pos + i] = char(qul[i] + 33);
-                }
-                pos += lseq;
+            pos += lseq;
+        } else {
+            for (int i = 0; i < lseq; ++i) {
+                data[pos + i] = Base[bam_seqi(seq, i)];
             }
-            data[pos++] = '\n';
+            pos += lseq;
+            data[pos++] = '\n', data[pos++] = '+', data[pos++] = '\n';
+            for (int i = 0; i < lseq; ++i) {
+                data[pos + i] = char(qul[i] + 33);
+            }
+            pos += lseq;
         }
-        outStream.write(data, pos);
-
-//        for (int i = 0; i < 1000; i++)
-//            if (cnt[i])printf("%d %d\n", i - 500, cnt[i]);
+        data[pos++] = '\n';
     }
+    outStream.write(data, pos);
 
-    printf("cost %.5f\n", (clock() - t0) * 1e-6);
+
     printf("total process %d reads\n", N);
     printf("total print %d reads\n", M);
     if (r < -1) {

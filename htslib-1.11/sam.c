@@ -2734,11 +2734,11 @@ static void *sam_dispatcher_write(void *vp) {
     // Iterates until result queue is shutdown, where it returns NULL.
     while ((r = hts_tpool_next_result_wait(fd->q))) {
         sp_lines *gl = (sp_lines *) hts_tpool_result_data(r);
+//        printf("now is writing gl : %s\n", gl->data);
         if (!gl) {
             sam_state_err(fd, ENOMEM);
             goto err;
         }
-
         if (fp->idx) {
             sp_bams *gb = gl->bams;
             int i = 0, count = 0;
@@ -3061,53 +3061,27 @@ int sam_read1(htsFile *fp, sam_hdr_t *h, bam1_t *b) {
     }
 }
 
-
 static int sam_format1_append(const bam_hdr_t *h, const bam1_t *b, kstring_t *str) {
     int i, r = 0;
-    uint8_t *s, *end;
     const bam1_core_t *c = &b->core;
 
     if (c->l_qname == 0)
         return -1;
+    r |= kputc_('@', str); // query name
     r |= kputsn_(bam_get_qname(b), c->l_qname - 1 - c->l_extranul, str);
-    r |= kputc_('\t', str); // query name
-    r |= kputw(c->flag, str);
-    r |= kputc_('\t', str); // flag
-    if (c->tid >= 0) { // chr
-        r |= kputs(h->target_name[c->tid], str);
-        r |= kputc_('\t', str);
-    } else r |= kputsn_("*\t", 2, str);
-    r |= kputll(c->pos + 1, str);
-    r |= kputc_('\t', str); // pos
-    r |= kputw(c->qual, str);
-    r |= kputc_('\t', str); // qual
-    if (c->n_cigar) { // cigar
-        uint32_t *cigar = bam_get_cigar(b);
-        for (i = 0; i < c->n_cigar; ++i) {
-            r |= kputw(bam_cigar_oplen(cigar[i]), str);
-            r |= kputc_(bam_cigar_opchr(cigar[i]), str);
-        }
-    } else r |= kputc_('*', str);
-    r |= kputc_('\t', str);
-    if (c->mtid < 0) r |= kputsn_("*\t", 2, str); // mate chr
-    else if (c->mtid == c->tid) r |= kputsn_("=\t", 2, str);
-    else {
-        r |= kputs(h->target_name[c->mtid], str);
-        r |= kputc_('\t', str);
-    }
-    r |= kputll(c->mpos + 1, str);
-    r |= kputc_('\t', str); // mate pos
-    r |= kputll(c->isize, str);
-    r |= kputc_('\t', str); // template len
+    r |= kputc_('\n', str); // query name
+
     if (c->l_qseq) { // seq and qual
         uint8_t *s = bam_get_seq(b);
-        if (ks_resize(str, str->l + 2 + 2 * c->l_qseq) < 0) goto mem_err;
+        if (ks_resize(str, str->l + 4 + 2 * c->l_qseq) < 0) goto mem_err;
         char *cp = str->s + str->l;
 
         // Sequence, 2 bases at a time
         nibble2base(s, cp, c->l_qseq);
-        cp[c->l_qseq] = '\t';
-        cp += c->l_qseq + 1;
+        cp[c->l_qseq] = '\n';
+        cp[c->l_qseq + 1] = '+';
+        cp[c->l_qseq + 2] = '\n';
+        cp += c->l_qseq + 3;
 
         // Quality
         s = bam_get_qual(b);
@@ -3123,32 +3097,105 @@ static int sam_format1_append(const bam_hdr_t *h, const bam1_t *b, kstring_t *st
         cp[i] = 0;
         cp += i;
         str->l = cp - str->s;
-    } else r |= kputsn_("*\t*", 3, str);
+    } else r |= kputsn_("*\n*", 3, str);
 
-    s = bam_get_aux(b); // aux
-    end = b->data + b->l_data;
-
-    while (end - s >= 4) {
-        r |= kputc_('\t', str);
-        if ((s = (uint8_t *) sam_format_aux1(s, s[2], s + 3, end, str)) == NULL)
-            goto bad_aux;
-    }
-    r |= kputsn("", 0, str); // nul terminate
-    if (r < 0) goto mem_err;
 
     return str->l;
 
-    bad_aux:
-    hts_log_error("Corrupted aux data for read %.*s",
-                  b->core.l_qname, bam_get_qname(b));
-    errno = EINVAL;
-    return -1;
 
     mem_err:
     hts_log_error("Out of memory");
     errno = ENOMEM;
     return -1;
 }
+//
+//static int sam_format1_append(const bam_hdr_t *h, const bam1_t *b, kstring_t *str) {
+//    int i, r = 0;
+//    uint8_t *s, *end;
+//    const bam1_core_t *c = &b->core;
+//
+//    if (c->l_qname == 0)
+//        return -1;
+//    r |= kputsn_(bam_get_qname(b), c->l_qname - 1 - c->l_extranul, str);
+//    r |= kputc_('\t', str); // query name
+//    r |= kputw(c->flag, str);
+//    r |= kputc_('\t', str); // flag
+//    if (c->tid >= 0) { // chr
+//        r |= kputs(h->target_name[c->tid], str);
+//        r |= kputc_('\t', str);
+//    } else r |= kputsn_("*\t", 2, str);
+//    r |= kputll(c->pos + 1, str);
+//    r |= kputc_('\t', str); // pos
+//    r |= kputw(c->qual, str);
+//    r |= kputc_('\t', str); // qual
+//    if (c->n_cigar) { // cigar
+//        uint32_t *cigar = bam_get_cigar(b);
+//        for (i = 0; i < c->n_cigar; ++i) {
+//            r |= kputw(bam_cigar_oplen(cigar[i]), str);
+//            r |= kputc_(bam_cigar_opchr(cigar[i]), str);
+//        }
+//    } else r |= kputc_('*', str);
+//    r |= kputc_('\t', str);
+//    if (c->mtid < 0) r |= kputsn_("*\t", 2, str); // mate chr
+//    else if (c->mtid == c->tid) r |= kputsn_("=\t", 2, str);
+//    else {
+//        r |= kputs(h->target_name[c->mtid], str);
+//        r |= kputc_('\t', str);
+//    }
+//    r |= kputll(c->mpos + 1, str);
+//    r |= kputc_('\t', str); // mate pos
+//    r |= kputll(c->isize, str);
+//    r |= kputc_('\t', str); // template len
+//    if (c->l_qseq) { // seq and qual
+//        uint8_t *s = bam_get_seq(b);
+//        if (ks_resize(str, str->l + 2 + 2 * c->l_qseq) < 0) goto mem_err;
+//        char *cp = str->s + str->l;
+//
+//        // Sequence, 2 bases at a time
+//        nibble2base(s, cp, c->l_qseq);
+//        cp[c->l_qseq] = '\t';
+//        cp += c->l_qseq + 1;
+//
+//        // Quality
+//        s = bam_get_qual(b);
+//        i = 0;
+//        if (s[0] == 0xff) {
+//            cp[i++] = '*';
+//        } else {
+//            // local copy of c->l_qseq to aid unrolling
+//            uint32_t lqseq = c->l_qseq;
+//            for (i = 0; i < lqseq; ++i)
+//                cp[i] = s[i] + 33;
+//        }
+//        cp[i] = 0;
+//        cp += i;
+//        str->l = cp - str->s;
+//    } else r |= kputsn_("*\t*", 3, str);
+//
+//    s = bam_get_aux(b); // aux
+//    end = b->data + b->l_data;
+//
+//    while (end - s >= 4) {
+//        r |= kputc_('\t', str);
+//        if ((s = (uint8_t *) sam_format_aux1(s, s[2], s + 3, end, str)) == NULL)
+//            goto bad_aux;
+//    }
+//    r |= kputsn("", 0, str); // nul terminate
+//    if (r < 0) goto mem_err;
+//
+//    return str->l;
+//
+//    bad_aux:
+//    hts_log_error("Corrupted aux data for read %.*s",
+//                  b->core.l_qname, bam_get_qname(b));
+//    errno = EINVAL;
+//    return -1;
+//
+//    mem_err:
+//    hts_log_error("Out of memory");
+//    errno = ENOMEM;
+//    return -1;
+//}
 
 int sam_format1(const bam_hdr_t *h, const bam1_t *b, kstring_t *str) {
     str->l = 0;
@@ -3164,7 +3211,6 @@ int sam_write1(htsFile *fp, const sam_hdr_t *h, const bam1_t *b) {
             fp->format.format = bam;
             /* fall-through */
         case bam:
-//            printf("bam!\n");
             return bam_write_idx1(fp, h, b);
 
         case cram:
@@ -3175,12 +3221,12 @@ int sam_write1(htsFile *fp, const sam_hdr_t *h, const bam1_t *b) {
             fp->format.format = sam;
             /* fall-through */
         case sam:
-//            printf("sam!\n");
             if (fp->state) {
                 SAM_state *fd = (SAM_state *) fp->state;
 
                 // Threaded output
                 if (!fd->h) {
+                    printf("!fd->h\n");
                     // NB: discard const.  We don't actually modify sam_hdr_t here,
                     // just data pointed to by it (which is a bit weasely still),
                     // but out cached pointer must be non-const as we want to

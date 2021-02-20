@@ -123,32 +123,32 @@ Rabbitbam2fq/fast:
 	$(MAKE) -f CMakeFiles/Rabbitbam2fq.dir/build.make CMakeFiles/Rabbitbam2fq.dir/build
 .PHONY : Rabbitbam2fq/fast
 
-test.o: test.cpp.o
+fast.o: fast.cpp.o
 
-.PHONY : test.o
+.PHONY : fast.o
 
 # target to build an object file
-test.cpp.o:
-	$(MAKE) -f CMakeFiles/Rabbitbam2fq.dir/build.make CMakeFiles/Rabbitbam2fq.dir/test.cpp.o
-.PHONY : test.cpp.o
+fast.cpp.o:
+	$(MAKE) -f CMakeFiles/Rabbitbam2fq.dir/build.make CMakeFiles/Rabbitbam2fq.dir/fast.cpp.o
+.PHONY : fast.cpp.o
 
-test.i: test.cpp.i
+fast.i: fast.cpp.i
 
-.PHONY : test.i
+.PHONY : fast.i
 
 # target to preprocess a source file
-test.cpp.i:
-	$(MAKE) -f CMakeFiles/Rabbitbam2fq.dir/build.make CMakeFiles/Rabbitbam2fq.dir/test.cpp.i
-.PHONY : test.cpp.i
+fast.cpp.i:
+	$(MAKE) -f CMakeFiles/Rabbitbam2fq.dir/build.make CMakeFiles/Rabbitbam2fq.dir/fast.cpp.i
+.PHONY : fast.cpp.i
 
-test.s: test.cpp.s
+fast.s: fast.cpp.s
 
-.PHONY : test.s
+.PHONY : fast.s
 
 # target to generate assembly for a file
-test.cpp.s:
-	$(MAKE) -f CMakeFiles/Rabbitbam2fq.dir/build.make CMakeFiles/Rabbitbam2fq.dir/test.cpp.s
-.PHONY : test.cpp.s
+fast.cpp.s:
+	$(MAKE) -f CMakeFiles/Rabbitbam2fq.dir/build.make CMakeFiles/Rabbitbam2fq.dir/fast.cpp.s
+.PHONY : fast.cpp.s
 
 # Help Target
 help:
@@ -159,9 +159,9 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
 	@echo "... Rabbitbam2fq"
-	@echo "... test.o"
-	@echo "... test.i"
-	@echo "... test.s"
+	@echo "... fast.o"
+	@echo "... fast.i"
+	@echo "... fast.s"
 .PHONY : help
 
 
