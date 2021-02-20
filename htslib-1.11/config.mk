@@ -28,7 +28,7 @@
 # in the Makefile to reflect your configuration choices.  If you don't run
 # configure, the main Makefile contains suitable conservative defaults.
 
-prefix       = /HTSLIB
+prefix       = /Users/ylf9811/CLionProjects/Rabbitbam2fq/HTSLIB
 exec_prefix  = ${prefix}
 bindir       = ${exec_prefix}/bin
 includedir   = ${prefix}/include

@@ -10,9 +10,9 @@ DOTO
 - [x] sam中第二列是0？
 - [x] main.c改为cpp
 - [ ] 加上fprintf
-- [x] htslib icc -O3
+- [ ] htslib icc -O3
 
-- [ ] 
+- [ ] seq和qual转化时压位
 - [ ] 
 - [ ] 
 
@@ -292,3 +292,11 @@ samtool view ！！ no write
 | 4            | 5.86s user 1.00s system 505% cpu 1.356 total |
 | 8            | 6.47s user 1.09s system 608% cpu 1.241 total |
 
+0220 new bam2fq (almost use htslib test_view.c)  and  get right fq file（include reverse some reads）
+
+| threadNumber | Cost                                         |
+| ------------ | -------------------------------------------- |
+| 1            | 5.61s user 1.09s system 132% cpu 5.052 total |
+| 2            | 5.54s user 0.93s system 251% cpu 2.579 total |
+| 4            | 6.52s user 1.05s system 485% cpu 1.560 total |
+| 8            | 7.28s user 1.00s system 628% cpu 1.316 total |

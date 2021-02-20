@@ -123,32 +123,32 @@ Rabbitbam2fq/fast:
 	$(MAKE) -f CMakeFiles/Rabbitbam2fq.dir/build.make CMakeFiles/Rabbitbam2fq.dir/build
 .PHONY : Rabbitbam2fq/fast
 
-fast.o: fast.cpp.o
+fast.o: fast.c.o
 
 .PHONY : fast.o
 
 # target to build an object file
-fast.cpp.o:
-	$(MAKE) -f CMakeFiles/Rabbitbam2fq.dir/build.make CMakeFiles/Rabbitbam2fq.dir/fast.cpp.o
-.PHONY : fast.cpp.o
+fast.c.o:
+	$(MAKE) -f CMakeFiles/Rabbitbam2fq.dir/build.make CMakeFiles/Rabbitbam2fq.dir/fast.c.o
+.PHONY : fast.c.o
 
-fast.i: fast.cpp.i
+fast.i: fast.c.i
 
 .PHONY : fast.i
 
 # target to preprocess a source file
-fast.cpp.i:
-	$(MAKE) -f CMakeFiles/Rabbitbam2fq.dir/build.make CMakeFiles/Rabbitbam2fq.dir/fast.cpp.i
-.PHONY : fast.cpp.i
+fast.c.i:
+	$(MAKE) -f CMakeFiles/Rabbitbam2fq.dir/build.make CMakeFiles/Rabbitbam2fq.dir/fast.c.i
+.PHONY : fast.c.i
 
-fast.s: fast.cpp.s
+fast.s: fast.c.s
 
 .PHONY : fast.s
 
 # target to generate assembly for a file
-fast.cpp.s:
-	$(MAKE) -f CMakeFiles/Rabbitbam2fq.dir/build.make CMakeFiles/Rabbitbam2fq.dir/fast.cpp.s
-.PHONY : fast.cpp.s
+fast.c.s:
+	$(MAKE) -f CMakeFiles/Rabbitbam2fq.dir/build.make CMakeFiles/Rabbitbam2fq.dir/fast.c.s
+.PHONY : fast.c.s
 
 # Help Target
 help:

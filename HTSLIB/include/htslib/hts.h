@@ -216,7 +216,9 @@ enum htsCompression {
 typedef struct htsFormat {
     enum htsFormatCategory category;
     enum htsExactFormat format;
-    struct { short major, minor; } version;
+    struct {
+        short major, minor;
+    } version;
     enum htsCompression compression;
     short compression_level;  // currently unused
     void *specific;  // format specific options; see struct hts_opt.
@@ -242,7 +244,7 @@ typedef struct hts_idx_t hts_idx_t;
 //    Note is_bgzf being set does not indicate the flag is BGZF compressed,
 //    nor even whether it is compressed at all (eg on naked BAMs).
 typedef struct htsFile {
-    uint32_t is_bin:1, is_write:1, is_be:1, is_cram:1, is_bgzf:1, dummy:27;
+    uint32_t is_bin: 1, is_write: 1, is_be: 1, is_cram: 1, is_bgzf: 1, dummy: 27;
     int64_t lineno;
     kstring_t line;
     char *fn, *fn_aux;
@@ -273,17 +275,17 @@ typedef struct htsThreadPool {
 // REQUIRED_FIELDS
 enum sam_fields {
     SAM_QNAME = 0x00000001,
-    SAM_FLAG  = 0x00000002,
+    SAM_FLAG = 0x00000002,
     SAM_RNAME = 0x00000004,
-    SAM_POS   = 0x00000008,
-    SAM_MAPQ  = 0x00000010,
+    SAM_POS = 0x00000008,
+    SAM_MAPQ = 0x00000010,
     SAM_CIGAR = 0x00000020,
     SAM_RNEXT = 0x00000040,
     SAM_PNEXT = 0x00000080,
-    SAM_TLEN  = 0x00000100,
-    SAM_SEQ   = 0x00000200,
-    SAM_QUAL  = 0x00000400,
-    SAM_AUX   = 0x00000800,
+    SAM_TLEN = 0x00000100,
+    SAM_SEQ = 0x00000200,
+    SAM_QUAL = 0x00000400,
+    SAM_AUX = 0x00000800,
     SAM_RGAUX = 0x00001000,
 };
 
@@ -408,6 +410,7 @@ extern const unsigned char seq_nt16_table[256];
 ambiguity code letter (or '=' when given 0).
 */
 extern const char seq_nt16_str[];
+extern const char seq_nt16_str_re[];
 
 /*! @abstract Table for converting a 4-bit encoded nucleotide to about 2 bits.
 Returns 0/1/2/3 for 1/2/4/8 (i.e., A/C/G/T), or 4 otherwise (0 or ambiguous).
@@ -661,7 +664,7 @@ typedef int64_t hts_pos_t;
 // typedef int32_t hts_pos_t;
 
 typedef struct hts_pair_pos_t {
-   hts_pos_t beg, end;
+    hts_pos_t beg, end;
 } hts_pair_pos_t;
 
 typedef hts_pair_pos_t hts_pair32_t;  // For backwards compatibility
@@ -684,7 +687,9 @@ typedef struct hts_reglist_t {
 } hts_reglist_t;
 
 typedef int hts_readrec_func(BGZF *fp, void *data, void *r, int *tid, hts_pos_t *beg, hts_pos_t *end);
+
 typedef int hts_seek_func(void *fp, int64_t offset, int where);
+
 typedef int64_t hts_tell_func(void *fp);
 
 /**
@@ -727,7 +732,7 @@ typedef int64_t hts_tell_func(void *fp);
  */
 
 typedef struct hts_itr_t {
-    uint32_t read_rest:1, finished:1, is_cram:1, nocoor:1, multi:1, dummy:27;
+    uint32_t read_rest: 1, finished: 1, is_cram: 1, nocoor: 1, multi: 1, dummy: 27;
     int tid, n_off, i, n_reg;
     hts_pos_t beg, end;
     hts_reglist_t *reg_list;
@@ -746,8 +751,8 @@ typedef struct hts_itr_t {
 
 typedef hts_itr_t hts_itr_multi_t;
 
-    #define hts_bin_first(l) (((1<<(((l)<<1) + (l))) - 1) / 7)
-    #define hts_bin_parent(l) (((l) - 1) >> 3)
+#define hts_bin_first(l) (((1<<(((l)<<1) + (l))) - 1) / 7)
+#define hts_bin_parent(l) (((l) - 1) >> 3)
 
 ///////////////////////////////////////////////////////////
 // Low-level API for building indexes.
@@ -953,7 +958,7 @@ int hts_idx_set_meta(hts_idx_t *idx, uint32_t l_meta, uint8_t *meta, int is_copy
     @note Cram CRAI indexes do not include this information.
 */
 HTSLIB_EXPORT
-int hts_idx_get_stat(const hts_idx_t* idx, int tid, uint64_t* mapped, uint64_t* unmapped);
+int hts_idx_get_stat(const hts_idx_t *idx, int tid, uint64_t *mapped, uint64_t *unmapped);
 
 /// Return the number of unplaced reads from an index
 /** @param idx    Index
@@ -963,7 +968,7 @@ int hts_idx_get_stat(const hts_idx_t* idx, int tid, uint64_t* mapped, uint64_t* 
     files).
 */
 HTSLIB_EXPORT
-uint64_t hts_idx_get_n_no_coor(const hts_idx_t* idx);
+uint64_t hts_idx_get_n_no_coor(const hts_idx_t *idx);
 
 ///////////////////////////////////////////////////////////
 // Region parsing
@@ -987,8 +992,9 @@ uint64_t hts_idx_get_n_no_coor(const hts_idx_t* idx);
 HTSLIB_EXPORT
 long long hts_parse_decimal(const char *str, char **strend, int flags);
 
-typedef int (*hts_name2id_f)(void*, const char*);
-typedef const char *(*hts_id2name_f)(void*, int);
+typedef int (*hts_name2id_f)(void *, const char *);
+
+typedef const char *(*hts_id2name_f)(void *, int);
 
 /// Parse a "CHR:START-END"-style region string
 /** @param str  String to be parsed
@@ -1110,7 +1116,8 @@ hts_itr_t *hts_itr_query(const hts_idx_t *idx, int tid, hts_pos_t beg, hts_pos_t
 HTSLIB_EXPORT
 void hts_itr_destroy(hts_itr_t *iter);
 
-typedef hts_itr_t *hts_itr_query_func(const hts_idx_t *idx, int tid, hts_pos_t beg, hts_pos_t end, hts_readrec_func *readrec);
+typedef hts_itr_t *hts_itr_query_func(const hts_idx_t *idx, int tid, hts_pos_t beg, hts_pos_t end,
+                                      hts_readrec_func *readrec);
 
 /// Create a single-region iterator from a text region specification
 /** @param idx       Index
@@ -1126,7 +1133,9 @@ typedef hts_itr_t *hts_itr_query_func(const hts_idx_t *idx, int tid, hts_pos_t b
     via hts_itr_destroy() when it is no longer needed.
  */
 HTSLIB_EXPORT
-hts_itr_t *hts_itr_querys(const hts_idx_t *idx, const char *reg, hts_name2id_f getid, void *hdr, hts_itr_query_func *itr_query, hts_readrec_func *readrec);
+hts_itr_t *
+hts_itr_querys(const hts_idx_t *idx, const char *reg, hts_name2id_f getid, void *hdr, hts_itr_query_func *itr_query,
+               hts_readrec_func *readrec);
 
 /// Return the next record from an iterator
 /** @param fp      Input file handle
@@ -1149,15 +1158,18 @@ int hts_itr_next(BGZF *fp, hts_itr_t *iter, void *r, void *data) HTS_RESULT_USED
     up, only the array should be freed, not the names.
  */
 HTSLIB_EXPORT
-const char **hts_idx_seqnames(const hts_idx_t *idx, int *n, hts_id2name_f getid, void *hdr); // free only the array, not the values
+const char **
+hts_idx_seqnames(const hts_idx_t *idx, int *n, hts_id2name_f getid, void *hdr); // free only the array, not the values
 
 /**********************************
  * Iterator with multiple regions *
  **********************************/
 
 typedef int hts_itr_multi_query_func(const hts_idx_t *idx, hts_itr_t *itr);
+
 HTSLIB_EXPORT
 int hts_itr_multi_bam(const hts_idx_t *idx, hts_itr_t *iter);
+
 HTSLIB_EXPORT
 int hts_itr_multi_cram(const hts_idx_t *idx, hts_itr_t *iter);
 
@@ -1177,7 +1189,9 @@ int hts_itr_multi_cram(const hts_idx_t *idx, hts_itr_t *iter);
     via hts_itr_destroy() when it is no longer needed.
  */
 HTSLIB_EXPORT
-hts_itr_t *hts_itr_regions(const hts_idx_t *idx, hts_reglist_t *reglist, int count, hts_name2id_f getid, void *hdr, hts_itr_multi_query_func *itr_specific, hts_readrec_func *readrec, hts_seek_func *seek, hts_tell_func *tell);
+hts_itr_t *hts_itr_regions(const hts_idx_t *idx, hts_reglist_t *reglist, int count, hts_name2id_f getid, void *hdr,
+                           hts_itr_multi_query_func *itr_specific, hts_readrec_func *readrec, hts_seek_func *seek,
+                           hts_tell_func *tell);
 
 /// Return the next record from an iterator
 /** @param fp      Input file handle
@@ -1200,7 +1214,7 @@ int hts_itr_multi_next(htsFile *fd, hts_itr_t *iter, void *r);
     via hts_reglist_free() when it is no longer needed.
  */
 HTSLIB_EXPORT
-hts_reglist_t *hts_reglist_create(char **argv, int argc, int *r_count, void *hdr,  hts_name2id_f getid);
+hts_reglist_t *hts_reglist_create(char **argv, int argc, int *r_count, void *hdr, hts_name2id_f getid);
 
 /// Free a region list
 /** @param reglist    Region list
@@ -1215,20 +1229,21 @@ void hts_reglist_free(hts_reglist_t *reglist, int count);
 #define hts_itr_multi_destroy(iter) hts_itr_destroy(iter)
 
 
-    /**
-     * hts_file_type() - Convenience function to determine file type
-     * DEPRECATED:  This function has been replaced by hts_detect_format().
-     * It and these FT_* macros will be removed in a future HTSlib release.
-     */
-    #define FT_UNKN   0
-    #define FT_GZ     1
-    #define FT_VCF    2
-    #define FT_VCF_GZ (FT_GZ|FT_VCF)
-    #define FT_BCF    (1<<2)
-    #define FT_BCF_GZ (FT_GZ|FT_BCF)
-    #define FT_STDIN  (1<<3)
-    HTSLIB_EXPORT
-    int hts_file_type(const char *fname);
+/**
+ * hts_file_type() - Convenience function to determine file type
+ * DEPRECATED:  This function has been replaced by hts_detect_format().
+ * It and these FT_* macros will be removed in a future HTSlib release.
+ */
+#define FT_UNKN   0
+#define FT_GZ     1
+#define FT_VCF    2
+#define FT_VCF_GZ (FT_GZ|FT_VCF)
+#define FT_BCF    (1<<2)
+#define FT_BCF_GZ (FT_GZ|FT_BCF)
+#define FT_STDIN  (1<<3)
+
+HTSLIB_EXPORT
+int hts_file_type(const char *fname);
 
 
 /***************************
@@ -1240,6 +1255,7 @@ typedef struct errmod_t errmod_t;
 
 HTSLIB_EXPORT
 errmod_t *errmod_init(double depcorr);
+
 HTSLIB_EXPORT
 void errmod_destroy(errmod_t *em);
 
@@ -1288,67 +1304,66 @@ were invalid; or ENOMEM if a memory allocation failed.
 */
 
 HTSLIB_EXPORT
-int probaln_glocal(const uint8_t *ref, int l_ref, const uint8_t *query, int l_query, const uint8_t *iqual, const probaln_par_t *c, int *state, uint8_t *q);
+int probaln_glocal(const uint8_t *ref, int l_ref, const uint8_t *query, int l_query, const uint8_t *iqual,
+                   const probaln_par_t *c, int *state, uint8_t *q);
 
 
-    /**********************
-     * MD5 implementation *
-     **********************/
+/**********************
+ * MD5 implementation *
+ **********************/
 
-    struct hts_md5_context;
-    typedef struct hts_md5_context hts_md5_context;
+struct hts_md5_context;
+typedef struct hts_md5_context hts_md5_context;
 
-    /*! @abstract   Initialises an MD5 context.
-     *  @discussion
-     *    The expected use is to allocate an hts_md5_context using
-     *    hts_md5_init().  This pointer is then passed into one or more calls
-     *    of hts_md5_update() to compute successive internal portions of the
-     *    MD5 sum, which can then be externalised as a full 16-byte MD5sum
-     *    calculation by calling hts_md5_final().  This can then be turned
-     *    into ASCII via hts_md5_hex().
-     *
-     *    To dealloate any resources created by hts_md5_init() call the
-     *    hts_md5_destroy() function.
-     *
-     *  @return     hts_md5_context pointer on success, NULL otherwise.
-     */
-    HTSLIB_EXPORT
-    hts_md5_context *hts_md5_init(void);
+/*! @abstract   Initialises an MD5 context.
+ *  @discussion
+ *    The expected use is to allocate an hts_md5_context using
+ *    hts_md5_init().  This pointer is then passed into one or more calls
+ *    of hts_md5_update() to compute successive internal portions of the
+ *    MD5 sum, which can then be externalised as a full 16-byte MD5sum
+ *    calculation by calling hts_md5_final().  This can then be turned
+ *    into ASCII via hts_md5_hex().
+ *
+ *    To dealloate any resources created by hts_md5_init() call the
+ *    hts_md5_destroy() function.
+ *
+ *  @return     hts_md5_context pointer on success, NULL otherwise.
+ */
+HTSLIB_EXPORT
+hts_md5_context *hts_md5_init(void);
 
-    /*! @abstract Updates the context with the MD5 of the data. */
-    HTSLIB_EXPORT
-    void hts_md5_update(hts_md5_context *ctx, const void *data, unsigned long size);
+/*! @abstract Updates the context with the MD5 of the data. */
+HTSLIB_EXPORT
+void hts_md5_update(hts_md5_context *ctx, const void *data, unsigned long size);
 
-    /*! @abstract Computes the final 128-bit MD5 hash from the given context */
-    HTSLIB_EXPORT
-    void hts_md5_final(unsigned char *digest, hts_md5_context *ctx);
+/*! @abstract Computes the final 128-bit MD5 hash from the given context */
+HTSLIB_EXPORT
+void hts_md5_final(unsigned char *digest, hts_md5_context *ctx);
 
-    /*! @abstract Resets an md5_context to the initial state, as returned
-     *            by hts_md5_init().
-     */
-    HTSLIB_EXPORT
-    void hts_md5_reset(hts_md5_context *ctx);
+/*! @abstract Resets an md5_context to the initial state, as returned
+ *            by hts_md5_init().
+ */
+HTSLIB_EXPORT
+void hts_md5_reset(hts_md5_context *ctx);
 
-    /*! @abstract Converts a 128-bit MD5 hash into a 33-byte nul-termninated
-     *            hex string.
-     */
-    HTSLIB_EXPORT
-    void hts_md5_hex(char *hex, const unsigned char *digest);
+/*! @abstract Converts a 128-bit MD5 hash into a 33-byte nul-termninated
+ *            hex string.
+ */
+HTSLIB_EXPORT
+void hts_md5_hex(char *hex, const unsigned char *digest);
 
-    /*! @abstract Deallocates any memory allocated by hts_md5_init. */
-    HTSLIB_EXPORT
-    void hts_md5_destroy(hts_md5_context *ctx);
+/*! @abstract Deallocates any memory allocated by hts_md5_init. */
+HTSLIB_EXPORT
+void hts_md5_destroy(hts_md5_context *ctx);
 
-static inline int hts_reg2bin(hts_pos_t beg, hts_pos_t end, int min_shift, int n_lvls)
-{
-    int l, s = min_shift, t = ((1<<((n_lvls<<1) + n_lvls)) - 1) / 7;
-    for (--end, l = n_lvls; l > 0; --l, s += 3, t -= 1<<((l<<1)+l))
-        if (beg>>s == end>>s) return t + (beg>>s);
+static inline int hts_reg2bin(hts_pos_t beg, hts_pos_t end, int min_shift, int n_lvls) {
+    int l, s = min_shift, t = ((1 << ((n_lvls << 1) + n_lvls)) - 1) / 7;
+    for (--end, l = n_lvls; l > 0; --l, s += 3, t -= 1 << ((l << 1) + l))
+        if (beg >> s == end >> s) return t + (beg >> s);
     return 0;
 }
 
-static inline int hts_bin_bot(int bin, int n_lvls)
-{
+static inline int hts_bin_bot(int bin, int n_lvls) {
     int l, b;
     for (l = 0, b = bin; b; ++l, b = hts_bin_parent(b)); // compute the level of bin
     return (bin - hts_bin_first(l)) << (n_lvls - l) * 3;
@@ -1358,39 +1373,38 @@ static inline int hts_bin_bot(int bin, int n_lvls)
  * Endianness *
  **************/
 
-static inline int ed_is_big(void)
-{
-    long one= 1;
-    return !(*((char *)(&one)));
+static inline int ed_is_big(void) {
+    long one = 1;
+    return !(*((char *) (&one)));
 }
-static inline uint16_t ed_swap_2(uint16_t v)
-{
-    return (uint16_t)(((v & 0x00FF00FFU) << 8) | ((v & 0xFF00FF00U) >> 8));
+
+static inline uint16_t ed_swap_2(uint16_t v) {
+    return (uint16_t) (((v & 0x00FF00FFU) << 8) | ((v & 0xFF00FF00U) >> 8));
 }
-static inline void *ed_swap_2p(void *x)
-{
-    *(uint16_t*)x = ed_swap_2(*(uint16_t*)x);
+
+static inline void *ed_swap_2p(void *x) {
+    *(uint16_t *) x = ed_swap_2(*(uint16_t *) x);
     return x;
 }
-static inline uint32_t ed_swap_4(uint32_t v)
-{
+
+static inline uint32_t ed_swap_4(uint32_t v) {
     v = ((v & 0x0000FFFFU) << 16) | (v >> 16);
     return ((v & 0x00FF00FFU) << 8) | ((v & 0xFF00FF00U) >> 8);
 }
-static inline void *ed_swap_4p(void *x)
-{
-    *(uint32_t*)x = ed_swap_4(*(uint32_t*)x);
+
+static inline void *ed_swap_4p(void *x) {
+    *(uint32_t *) x = ed_swap_4(*(uint32_t *) x);
     return x;
 }
-static inline uint64_t ed_swap_8(uint64_t v)
-{
+
+static inline uint64_t ed_swap_8(uint64_t v) {
     v = ((v & 0x00000000FFFFFFFFLLU) << 32) | (v >> 32);
     v = ((v & 0x0000FFFF0000FFFFLLU) << 16) | ((v & 0xFFFF0000FFFF0000LLU) >> 16);
     return ((v & 0x00FF00FF00FF00FFLLU) << 8) | ((v & 0xFF00FF00FF00FF00LLU) >> 8);
 }
-static inline void *ed_swap_8p(void *x)
-{
-    *(uint64_t*)x = ed_swap_8(*(uint64_t*)x);
+
+static inline void *ed_swap_8p(void *x) {
+    *(uint64_t *) x = ed_swap_8(*(uint64_t *) x);
     return x;
 }
 

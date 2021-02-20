@@ -93,6 +93,7 @@ const unsigned char seq_nt16_table[256] = {
 
 HTSLIB_EXPORT
 const char seq_nt16_str[] = "=ACMGRSVTWYHKDBN";
+const char seq_nt16_str_re[] = "=TGMCRSVAWYHKDBN";
 
 HTSLIB_EXPORT
 const int seq_nt16_int[] = { 4, 0, 1, 4, 2, 4, 4, 4, 3, 4, 4, 4, 4, 4, 4, 4 };

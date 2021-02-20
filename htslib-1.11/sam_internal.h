@@ -33,14 +33,15 @@ extern "C" {
 
 // Used internally in the SAM format multi-threading.
 int sam_state_destroy(samFile *fp);
+
 int sam_set_thread_pool(htsFile *fp, htsThreadPool *p);
+
 int sam_set_threads(htsFile *fp, int nthreads);
 
 // bam1_t data (re)allocation
 int sam_realloc_bam_data(bam1_t *b, size_t desired);
 
-static inline int realloc_bam_data(bam1_t *b, size_t desired)
-{
+static inline int realloc_bam_data(bam1_t *b, size_t desired) {
     if (desired <= b->m_data) return 0;
     return sam_realloc_bam_data(b, desired);
 }
@@ -64,31 +65,68 @@ static inline int possibly_expand_bam_data(bam1_t *b, size_t bytes) {
  * for (i = 0; i < len; i++)
  *    seq[i] = seq_nt16_str[bam_seqi(nib, i)];
  */
-static inline void nibble2base(uint8_t *nib, char *seq, int len) {
-    static const char code2base[512] =
-        "===A=C=M=G=R=S=V=T=W=Y=H=K=D=B=N"
-        "A=AAACAMAGARASAVATAWAYAHAKADABAN"
-        "C=CACCCMCGCRCSCVCTCWCYCHCKCDCBCN"
-        "M=MAMCMMMGMRMSMVMTMWMYMHMKMDMBMN"
-        "G=GAGCGMGGGRGSGVGTGWGYGHGKGDGBGN"
-        "R=RARCRMRGRRRSRVRTRWRYRHRKRDRBRN"
-        "S=SASCSMSGSRSSSVSTSWSYSHSKSDSBSN"
-        "V=VAVCVMVGVRVSVVVTVWVYVHVKVDVBVN"
-        "T=TATCTMTGTRTSTVTTTWTYTHTKTDTBTN"
-        "W=WAWCWMWGWRWSWVWTWWWYWHWKWDWBWN"
-        "Y=YAYCYMYGYRYSYVYTYWYYYHYKYDYBYN"
-        "H=HAHCHMHGHRHSHVHTHWHYHHHKHDHBHN"
-        "K=KAKCKMKGKRKSKVKTKWKYKHKKKDKBKN"
-        "D=DADCDMDGDRDSDVDTDWDYDHDKDDDBDN"
-        "B=BABCBMBGBRBSBVBTBWBYBHBKBDBBBN"
-        "N=NANCNMNGNRNSNVNTNWNYNHNKNDNBNN";
 
-    int i, len2 = len/2;
+static inline void nibble2basere(uint8_t *nib, char *seq, int len) {
+    for (int i = 0; i < len; i++)
+        seq[len - i - 1] = seq_nt16_str_re[bam_seqi(nib, i)];
+    return;
+    static const char code2base[512] =
+            "===A=C=M=G=R=S=V=T=W=Y=H=K=D=B=N"
+            "A=AAACAMAGARASAVATAWAYAHAKADABAN"
+            "C=CACCCMCGCRCSCVCTCWCYCHCKCDCBCN"
+            "M=MAMCMMMGMRMSMVMTMWMYMHMKMDMBMN"
+            "G=GAGCGMGGGRGSGVGTGWGYGHGKGDGBGN"
+            "R=RARCRMRGRRRSRVRTRWRYRHRKRDRBRN"
+            "S=SASCSMSGSRSSSVSTSWSYSHSKSDSBSN"
+            "V=VAVCVMVGVRVSVVVTVWVYVHVKVDVBVN"
+            "T=TATCTMTGTRTSTVTTTWTYTHTKTDTBTN"
+            "W=WAWCWMWGWRWSWVWTWWWYWHWKWDWBWN"
+            "Y=YAYCYMYGYRYSYVYTYWYYYHYKYDYBYN"
+            "H=HAHCHMHGHRHSHVHTHWHYHHHKHDHBHN"
+            "K=KAKCKMKGKRKSKVKTKWKYKHKKKDKBKN"
+            "D=DADCDMDGDRDSDVDTDWDYDHDKDDDBDN"
+            "B=BABCBMBGBRBSBVBTBWBYBHBKBDBBBN"
+            "N=NANCNMNGNRNSNVNTNWNYNHNKNDNBNN";
+
+    int i, len2 = len / 2;
     seq[0] = 0;
 
     for (i = 0; i < len2; i++)
         // Note size_t cast helps gcc optimiser.
-        memcpy(&seq[i*2], &code2base[(size_t)nib[i]*2], 2);
+        memcpy(&seq[i * 2], &code2base[(size_t) nib[i] * 2], 2);
+
+    if ((i *= 2) < len)
+        seq[i] = seq_nt16_str[bam_seqi(nib, i)];
+}
+
+static inline void nibble2base(uint8_t *nib, char *seq, int len) {
+    for (int i = 0; i < len; i++)
+        seq[i] = seq_nt16_str[bam_seqi(nib, i)];
+    return;
+    static const char code2base[512] =
+            "===A=C=M=G=R=S=V=T=W=Y=H=K=D=B=N"
+            "A=AAACAMAGARASAVATAWAYAHAKADABAN"
+            "C=CACCCMCGCRCSCVCTCWCYCHCKCDCBCN"
+            "M=MAMCMMMGMRMSMVMTMWMYMHMKMDMBMN"
+            "G=GAGCGMGGGRGSGVGTGWGYGHGKGDGBGN"
+            "R=RARCRMRGRRRSRVRTRWRYRHRKRDRBRN"
+            "S=SASCSMSGSRSSSVSTSWSYSHSKSDSBSN"
+            "V=VAVCVMVGVRVSVVVTVWVYVHVKVDVBVN"
+            "T=TATCTMTGTRTSTVTTTWTYTHTKTDTBTN"
+            "W=WAWCWMWGWRWSWVWTWWWYWHWKWDWBWN"
+            "Y=YAYCYMYGYRYSYVYTYWYYYHYKYDYBYN"
+            "H=HAHCHMHGHRHSHVHTHWHYHHHKHDHBHN"
+            "K=KAKCKMKGKRKSKVKTKWKYKHKKKDKBKN"
+            "D=DADCDMDGDRDSDVDTDWDYDHDKDDDBDN"
+            "B=BABCBMBGBRBSBVBTBWBYBHBKBDBBBN"
+            "N=NANCNMNGNRNSNVNTNWNYNHNKNDNBNN";
+
+    int i, len2 = len / 2;
+    seq[0] = 0;
+
+    for (i = 0; i < len2; i++)
+        // Note size_t cast helps gcc optimiser.
+        memcpy(&seq[i * 2], &code2base[(size_t) nib[i] * 2], 2);
 
     if ((i *= 2) < len)
         seq[i] = seq_nt16_str[bam_seqi(nib, i)];

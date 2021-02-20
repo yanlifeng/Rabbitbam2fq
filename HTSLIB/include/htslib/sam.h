@@ -246,7 +246,7 @@ typedef struct bam1_t {
     uint8_t *data;
     int l_data;
     uint32_t m_data;
-    uint32_t mempolicy:2, :30 /* Reserved */;
+    uint32_t mempolicy: 2, : 30 /* Reserved */;
 } bam1_t;
 
 /*! @function
@@ -319,7 +319,7 @@ typedef struct bam1_t {
  @param i   The i-th position, 0-based
  @param b   Base in nt16 nomenclature (see seq_nt16_table)
 */
-#define bam_set_seqi(s,i,b) ((s)[(i)>>1] = ((s)[(i)>>1] & (0xf0 >> ((~(i)&1)<<2))) | ((b)<<((~(i)&1)<<2)))
+#define bam_set_seqi(s, i, b) ((s)[(i)>>1] = ((s)[(i)>>1] & (0xf0 >> ((~(i)&1)<<2))) | ((b)<<((~(i)&1)<<2)))
 
 /**************************
  *** Exported functions ***
@@ -388,7 +388,9 @@ sam_hdr_t *sam_hdr_dup(const sam_hdr_t *h0);
  * @abstract Old names for compatibility with existing code.
  */
 static inline sam_hdr_t *bam_hdr_init(void) { return sam_hdr_init(); }
+
 static inline void bam_hdr_destroy(sam_hdr_t *h) { sam_hdr_destroy(h); }
+
 static inline sam_hdr_t *bam_hdr_dup(const sam_hdr_t *h0) { return sam_hdr_dup(h0); }
 
 typedef htsFile samFile;
@@ -506,7 +508,7 @@ int sam_hdr_add_line(sam_hdr_t *h, const char *type, ...);
  */
 HTSLIB_EXPORT
 int sam_hdr_find_line_id(sam_hdr_t *h, const char *type,
-                      const char *ID_key, const char *ID_val, kstring_t *ks);
+                         const char *ID_key, const char *ID_val, kstring_t *ks);
 
 /// Returns a complete line of formatted text for a given type and index.
 /*!
@@ -588,7 +590,7 @@ int sam_hdr_remove_line_pos(sam_hdr_t *h, const char *type, int position);
  */
 HTSLIB_EXPORT
 int sam_hdr_update_line(sam_hdr_t *h, const char *type,
-        const char *ID_key, const char *ID_value, ...);
+                        const char *ID_key, const char *ID_value, ...);
 
 /// Remove all lines of a given type from a header, except the one matching an ID
 /*!
@@ -694,7 +696,8 @@ const char *sam_hdr_line_name(sam_hdr_t *bh, const char *type, int pos);
  * overwritten.
  */
 HTSLIB_EXPORT
-int sam_hdr_find_tag_id(sam_hdr_t *h, const char *type, const char *ID_key, const char *ID_value, const char *key, kstring_t *ks);
+int sam_hdr_find_tag_id(sam_hdr_t *h, const char *type, const char *ID_key, const char *ID_value, const char *key,
+                        kstring_t *ks);
 
 /// Return the value associated with a key for a header line identified by position
 /*!
@@ -1058,7 +1061,7 @@ HTSLIB_EXPORT
 hts_pos_t bam_endpos(const bam1_t *b);
 
 HTSLIB_EXPORT
-int   bam_str2flag(const char *str);    /** returns negative value on error */
+int bam_str2flag(const char *str);    /** returns negative value on error */
 
 HTSLIB_EXPORT
 char *bam_flag2str(int flag);   /** The string must be freed by the user */
@@ -1308,32 +1311,36 @@ HTSLIB_EXPORT
 const char *sam_parse_region(sam_hdr_t *h, const char *s, int *tid,
                              hts_pos_t *beg, hts_pos_t *end, int flags);
 
-    /***************
-     *** SAM I/O ***
-     ***************/
+/***************
+ *** SAM I/O ***
+ ***************/
 
-    #define sam_open(fn, mode) (hts_open((fn), (mode)))
-    #define sam_open_format(fn, mode, fmt) (hts_open_format((fn), (mode), (fmt)))
-    #define sam_close(fp) hts_close(fp)
+#define sam_open(fn, mode) (hts_open((fn), (mode)))
+#define sam_open_format(fn, mode, fmt) (hts_open_format((fn), (mode), (fmt)))
+#define sam_close(fp) hts_close(fp)
 
-    HTSLIB_EXPORT
-    int sam_open_mode(char *mode, const char *fn, const char *format);
+HTSLIB_EXPORT
+int sam_open_mode(char *mode, const char *fn, const char *format);
 
-    // A version of sam_open_mode that can handle ,key=value options.
-    // The format string is allocated and returned, to be freed by the caller.
-    // Prefix should be "r" or "w",
-    HTSLIB_EXPORT
-    char *sam_open_mode_opts(const char *fn,
-                             const char *mode,
-                             const char *format);
+// A version of sam_open_mode that can handle ,key=value options.
+// The format string is allocated and returned, to be freed by the caller.
+// Prefix should be "r" or "w",
+HTSLIB_EXPORT
+char *sam_open_mode_opts(const char *fn,
+                         const char *mode,
+                         const char *format);
 
-    HTSLIB_EXPORT
-    int sam_hdr_change_HD(sam_hdr_t *h, const char *key, const char *val);
+HTSLIB_EXPORT
+int sam_hdr_change_HD(sam_hdr_t *h, const char *key, const char *val);
 
-    HTSLIB_EXPORT
-    int sam_parse1(kstring_t *s, sam_hdr_t *h, bam1_t *b) HTS_RESULT_USED;
-    HTSLIB_EXPORT
-    int sam_format1(const sam_hdr_t *h, const bam1_t *b, kstring_t *str) HTS_RESULT_USED;
+HTSLIB_EXPORT
+int sam_parse1(kstring_t *s, sam_hdr_t *h, bam1_t *b) HTS_RESULT_USED;
+
+HTSLIB_EXPORT
+int sam_format1(const sam_hdr_t *h, const bam1_t *b, kstring_t *str) HTS_RESULT_USED;
+
+HTSLIB_EXPORT
+int fq_format1(const sam_hdr_t *h, const bam1_t *b, kstring_t *str) HTS_RESULT_USED;
 
 /// sam_read1 - Read a record from a file
 /** @param fp   Pointer to the source file
@@ -1341,20 +1348,23 @@ const char *sam_parse_region(sam_hdr_t *h, const char *s, int *tid,
  *  @param b    Pointer to the record placeholder
  *  @return >= 0 on successfully reading a new record, -1 on end of stream, < -1 on error
  */
-    HTSLIB_EXPORT
-    int sam_read1(samFile *fp, sam_hdr_t *h, bam1_t *b) HTS_RESULT_USED;
+HTSLIB_EXPORT
+int sam_read1(samFile *fp, sam_hdr_t *h, bam1_t *b) HTS_RESULT_USED;
 /// sam_write1 - Write a record to a file
 /** @param fp    Pointer to the destination file
  *  @param h     Pointer to the header structure previously read
  *  @param b     Pointer to the record to be written
  *  @return >= 0 on successfully writing the record, -1 on error
  */
-    HTSLIB_EXPORT
-    int sam_write1(samFile *fp, const sam_hdr_t *h, const bam1_t *b) HTS_RESULT_USED;
+HTSLIB_EXPORT
+int sam_write1(samFile *fp, const sam_hdr_t *h, const bam1_t *b) HTS_RESULT_USED;
 
-    /*************************************
-     *** Manipulating auxiliary fields ***
-     *************************************/
+HTSLIB_EXPORT
+int fq_write1(samFile *fp, const sam_hdr_t *h, const bam1_t *b) HTS_RESULT_USED;
+
+/*************************************
+ *** Manipulating auxiliary fields ***
+ *************************************/
 
 /// Converts a BAM aux tag to SAM format
 /*
@@ -1382,7 +1392,7 @@ static inline const uint8_t *sam_format_aux1(const uint8_t *key,
                                              kstring_t *ks) {
     int r = 0;
     const uint8_t *s = tag; // brevity and consistency with other code.
-    r |= kputsn_((char*)key, 2, ks) < 0;
+    r |= kputsn_((char *) key, 2, ks) < 0;
     r |= kputc_(':', ks) < 0;
     if (type == 'C') {
         r |= kputsn_("i:", 2, ks) < 0;
@@ -1390,7 +1400,7 @@ static inline const uint8_t *sam_format_aux1(const uint8_t *key,
         ++s;
     } else if (type == 'c') {
         r |= kputsn_("i:", 2, ks) < 0;
-        r |= kputw(*(int8_t*)s, ks) < 0;
+        r |= kputw(*(int8_t *) s, ks) < 0;
         ++s;
     } else if (type == 'S') {
         if (end - s >= 2) {
@@ -1448,18 +1458,23 @@ static inline const uint8_t *sam_format_aux1(const uint8_t *key,
 
         // or externalise sam.c's aux_type2size function?
         switch (sub_type) {
-        case 'A': case 'c': case 'C':
-            sub_type_size = 1;
-            break;
-        case 's': case 'S':
-            sub_type_size = 2;
-            break;
-        case 'i': case 'I': case 'f':
-            sub_type_size = 4;
-            break;
-        default:
-            sub_type_size = 0;
-            break;
+            case 'A':
+            case 'c':
+            case 'C':
+                sub_type_size = 1;
+                break;
+            case 's':
+            case 'S':
+                sub_type_size = 2;
+                break;
+            case 'i':
+            case 'I':
+            case 'f':
+                sub_type_size = 4;
+                break;
+            default:
+                sub_type_size = 0;
+                break;
         }
 
         uint32_t i, n;
@@ -1472,75 +1487,75 @@ static inline const uint8_t *sam_format_aux1(const uint8_t *key,
         r |= kputsn_("B:", 2, ks) < 0;
         r |= kputc(sub_type, ks) < 0; // write the type
         switch (sub_type) {
-        case 'c':
-            if (ks_expand(ks, n*2) < 0) goto mem_err;
-            for (i = 0; i < n; ++i) {
-                ks->s[ks->l++] = ',';
-                r |= kputw(*(int8_t*)s, ks) < 0;
-                ++s;
-            }
-            break;
-        case 'C':
-            if (ks_expand(ks, n*2) < 0) goto mem_err;
-            for (i = 0; i < n; ++i) {
-                ks->s[ks->l++] = ',';
-                r |= kputuw(*(uint8_t*)s, ks) < 0;
-                ++s;
-            }
-            break;
-        case 's':
-            if (ks_expand(ks, n*4) < 0) goto mem_err;
-            for (i = 0; i < n; ++i) {
-                ks->s[ks->l++] = ',';
-                r |= kputw(le_to_i16(s), ks) < 0;
-                s += 2;
-            }
-            break;
-        case 'S':
-            if (ks_expand(ks, n*4) < 0) goto mem_err;
-            for (i = 0; i < n; ++i) {
-                ks->s[ks->l++] = ',';
-                r |= kputuw(le_to_u16(s), ks) < 0;
-                s += 2;
-            }
-            break;
-        case 'i':
-            if (ks_expand(ks, n*6) < 0) goto mem_err;
-            for (i = 0; i < n; ++i) {
-                ks->s[ks->l++] = ',';
-                r |= kputw(le_to_i32(s), ks) < 0;
-                s += 4;
-            }
-            break;
-        case 'I':
-            if (ks_expand(ks, n*6) < 0) goto mem_err;
-            for (i = 0; i < n; ++i) {
-                ks->s[ks->l++] = ',';
-                r |= kputuw(le_to_u32(s), ks) < 0;
-                s += 4;
-            }
-            break;
-        case 'f':
-            if (ks_expand(ks, n*8) < 0) goto mem_err;
-            for (i = 0; i < n; ++i) {
-                ks->s[ks->l++] = ',';
-                r |= kputd(le_to_float(s), ks) < 0;
-                s += 4;
-            }
-            break;
-        default:
-            goto bad_aux;
+            case 'c':
+                if (ks_expand(ks, n * 2) < 0) goto mem_err;
+                for (i = 0; i < n; ++i) {
+                    ks->s[ks->l++] = ',';
+                    r |= kputw(*(int8_t *) s, ks) < 0;
+                    ++s;
+                }
+                break;
+            case 'C':
+                if (ks_expand(ks, n * 2) < 0) goto mem_err;
+                for (i = 0; i < n; ++i) {
+                    ks->s[ks->l++] = ',';
+                    r |= kputuw(*(uint8_t *) s, ks) < 0;
+                    ++s;
+                }
+                break;
+            case 's':
+                if (ks_expand(ks, n * 4) < 0) goto mem_err;
+                for (i = 0; i < n; ++i) {
+                    ks->s[ks->l++] = ',';
+                    r |= kputw(le_to_i16(s), ks) < 0;
+                    s += 2;
+                }
+                break;
+            case 'S':
+                if (ks_expand(ks, n * 4) < 0) goto mem_err;
+                for (i = 0; i < n; ++i) {
+                    ks->s[ks->l++] = ',';
+                    r |= kputuw(le_to_u16(s), ks) < 0;
+                    s += 2;
+                }
+                break;
+            case 'i':
+                if (ks_expand(ks, n * 6) < 0) goto mem_err;
+                for (i = 0; i < n; ++i) {
+                    ks->s[ks->l++] = ',';
+                    r |= kputw(le_to_i32(s), ks) < 0;
+                    s += 4;
+                }
+                break;
+            case 'I':
+                if (ks_expand(ks, n * 6) < 0) goto mem_err;
+                for (i = 0; i < n; ++i) {
+                    ks->s[ks->l++] = ',';
+                    r |= kputuw(le_to_u32(s), ks) < 0;
+                    s += 4;
+                }
+                break;
+            case 'f':
+                if (ks_expand(ks, n * 8) < 0) goto mem_err;
+                for (i = 0; i < n; ++i) {
+                    ks->s[ks->l++] = ',';
+                    r |= kputd(le_to_float(s), ks) < 0;
+                    s += 4;
+                }
+                break;
+            default:
+                goto bad_aux;
         }
     } else { // Unknown type
         goto bad_aux;
     }
     return r ? NULL : s;
 
- bad_aux:
+    bad_aux:
     errno = EINVAL;
     return NULL;
 
- mem_err:
+    mem_err:
     hts_log_error("Out of memory");
     errno = ENOMEM;
     return NULL;
@@ -1574,7 +1589,7 @@ static inline int bam_aux_get_str(const bam1_t *b,
     if (!t)
         return errno == ENOENT ? 0 : -1;
 
-    if (!sam_format_aux1(t-2, *t, t+1, b->data + b->l_data, s))
+    if (!sam_format_aux1(t - 2, *t, t + 1, b->data + b->l_data, s))
         return -1;
 
     return 1;
@@ -1827,7 +1842,7 @@ typedef struct bam_pileup1_t {
     bam1_t *b;
     int32_t qpos;
     int indel, level;
-    uint32_t is_del:1, is_head:1, is_tail:1, is_refskip:1, /* reserved */ :1, aux:27;
+    uint32_t is_del: 1, is_head: 1, is_tail: 1, is_refskip: 1, /* reserved */ : 1, aux: 27;
     bam_pileup_cd cd; // generic per-struct data, owned by caller.
     int cigar_ind;
 } bam_pileup1_t;
@@ -1840,117 +1855,118 @@ typedef struct bam_plp_s *bam_plp_t;
 struct bam_mplp_s;
 typedef struct bam_mplp_s *bam_mplp_t;
 
-    /**
-     *  bam_plp_init() - sets an iterator over multiple
-     *  @func:      see mplp_func in bam_plcmd.c in samtools for an example. Expected return
-     *              status: 0 on success, -1 on end, < -1 on non-recoverable errors
-     *  @data:      user data to pass to @func
-     *
-     *  The struct returned by a successful call should be freed
-     *  via bam_plp_destroy() when it is no longer needed.
-     */
-    HTSLIB_EXPORT
-    bam_plp_t bam_plp_init(bam_plp_auto_f func, void *data);
+/**
+ *  bam_plp_init() - sets an iterator over multiple
+ *  @func:      see mplp_func in bam_plcmd.c in samtools for an example. Expected return
+ *              status: 0 on success, -1 on end, < -1 on non-recoverable errors
+ *  @data:      user data to pass to @func
+ *
+ *  The struct returned by a successful call should be freed
+ *  via bam_plp_destroy() when it is no longer needed.
+ */
+HTSLIB_EXPORT
+bam_plp_t bam_plp_init(bam_plp_auto_f func, void *data);
 
-    HTSLIB_EXPORT
-    void bam_plp_destroy(bam_plp_t iter);
+HTSLIB_EXPORT
+void bam_plp_destroy(bam_plp_t iter);
 
-    HTSLIB_EXPORT
-    int bam_plp_push(bam_plp_t iter, const bam1_t *b);
+HTSLIB_EXPORT
+int bam_plp_push(bam_plp_t iter, const bam1_t *b);
 
-    HTSLIB_EXPORT
-    const bam_pileup1_t *bam_plp_next(bam_plp_t iter, int *_tid, int *_pos, int *_n_plp);
+HTSLIB_EXPORT
+const bam_pileup1_t *bam_plp_next(bam_plp_t iter, int *_tid, int *_pos, int *_n_plp);
 
-    HTSLIB_EXPORT
-    const bam_pileup1_t *bam_plp_auto(bam_plp_t iter, int *_tid, int *_pos, int *_n_plp);
+HTSLIB_EXPORT
+const bam_pileup1_t *bam_plp_auto(bam_plp_t iter, int *_tid, int *_pos, int *_n_plp);
 
-    HTSLIB_EXPORT
-    const bam_pileup1_t *bam_plp64_next(bam_plp_t iter, int *_tid, hts_pos_t *_pos, int *_n_plp);
+HTSLIB_EXPORT
+const bam_pileup1_t *bam_plp64_next(bam_plp_t iter, int *_tid, hts_pos_t *_pos, int *_n_plp);
 
-    HTSLIB_EXPORT
-    const bam_pileup1_t *bam_plp64_auto(bam_plp_t iter, int *_tid, hts_pos_t *_pos, int *_n_plp);
+HTSLIB_EXPORT
+const bam_pileup1_t *bam_plp64_auto(bam_plp_t iter, int *_tid, hts_pos_t *_pos, int *_n_plp);
 
-    HTSLIB_EXPORT
-    void bam_plp_set_maxcnt(bam_plp_t iter, int maxcnt);
+HTSLIB_EXPORT
+void bam_plp_set_maxcnt(bam_plp_t iter, int maxcnt);
 
-    HTSLIB_EXPORT
-    void bam_plp_reset(bam_plp_t iter);
+HTSLIB_EXPORT
+void bam_plp_reset(bam_plp_t iter);
 
-    /**
-     *  bam_plp_constructor() - sets a callback to initialise any per-pileup1_t fields.
-     *  @plp:       The bam_plp_t initialised using bam_plp_init.
-     *  @func:      The callback function itself.  When called, it is given the
-     *              data argument (specified in bam_plp_init), the bam structure and
-     *              a pointer to a locally allocated bam_pileup_cd union.  This union
-     *              will also be present in each bam_pileup1_t created.
-     */
-    HTSLIB_EXPORT
-    void bam_plp_constructor(bam_plp_t plp,
-                             int (*func)(void *data, const bam1_t *b, bam_pileup_cd *cd));
-    HTSLIB_EXPORT
-    void bam_plp_destructor(bam_plp_t plp,
-                            int (*func)(void *data, const bam1_t *b, bam_pileup_cd *cd));
+/**
+ *  bam_plp_constructor() - sets a callback to initialise any per-pileup1_t fields.
+ *  @plp:       The bam_plp_t initialised using bam_plp_init.
+ *  @func:      The callback function itself.  When called, it is given the
+ *              data argument (specified in bam_plp_init), the bam structure and
+ *              a pointer to a locally allocated bam_pileup_cd union.  This union
+ *              will also be present in each bam_pileup1_t created.
+ */
+HTSLIB_EXPORT
+void bam_plp_constructor(bam_plp_t plp,
+                         int (*func)(void *data, const bam1_t *b, bam_pileup_cd *cd));
 
-    /// Get pileup padded insertion sequence
-    /**
-     * @param p       pileup data
-     * @param ins     the kstring where the insertion sequence will be written
-     * @param del_len location for deletion length
-     * @return the length of insertion string on success; -1 on failure.
-     *
-     * Fills out the kstring with the padded insertion sequence for the current
-     * location in 'p'.  If this is not an insertion site, the string is blank.
-     *
-     * If del_len is not NULL, the location pointed to is set to the length of
-     * any deletion immediately following the insertion, or zero if none.
-     */
-    HTSLIB_EXPORT
-    int bam_plp_insertion(const bam_pileup1_t *p, kstring_t *ins, int *del_len) HTS_RESULT_USED;
+HTSLIB_EXPORT
+void bam_plp_destructor(bam_plp_t plp,
+                        int (*func)(void *data, const bam1_t *b, bam_pileup_cd *cd));
 
-    /// Create a new bam_mplp_t structure
-    /** The struct returned by a successful call should be freed
-     *  via bam_mplp_destroy() when it is no longer needed.
-     */
-    HTSLIB_EXPORT
-    bam_mplp_t bam_mplp_init(int n, bam_plp_auto_f func, void **data);
+/// Get pileup padded insertion sequence
+/**
+ * @param p       pileup data
+ * @param ins     the kstring where the insertion sequence will be written
+ * @param del_len location for deletion length
+ * @return the length of insertion string on success; -1 on failure.
+ *
+ * Fills out the kstring with the padded insertion sequence for the current
+ * location in 'p'.  If this is not an insertion site, the string is blank.
+ *
+ * If del_len is not NULL, the location pointed to is set to the length of
+ * any deletion immediately following the insertion, or zero if none.
+ */
+HTSLIB_EXPORT
+int bam_plp_insertion(const bam_pileup1_t *p, kstring_t *ins, int *del_len) HTS_RESULT_USED;
 
-    /// Set up mpileup overlap detection
-    /**
-     * @param iter    mpileup iterator
-     * @return 0 on success; a negative value on error
-     *
-     *  If called, mpileup will detect overlapping
-     *  read pairs and for each base pair set the base quality of the
-     *  lower-quality base to zero, thus effectively discarding it from
-     *  calling. If the two bases are identical, the quality of the other base
-     *  is increased to the sum of their qualities (capped at 200), otherwise
-     *  it is multiplied by 0.8.
-     */
-    HTSLIB_EXPORT
-    int bam_mplp_init_overlaps(bam_mplp_t iter);
+/// Create a new bam_mplp_t structure
+/** The struct returned by a successful call should be freed
+ *  via bam_mplp_destroy() when it is no longer needed.
+ */
+HTSLIB_EXPORT
+bam_mplp_t bam_mplp_init(int n, bam_plp_auto_f func, void **data);
 
-    HTSLIB_EXPORT
-    void bam_mplp_destroy(bam_mplp_t iter);
+/// Set up mpileup overlap detection
+/**
+ * @param iter    mpileup iterator
+ * @return 0 on success; a negative value on error
+ *
+ *  If called, mpileup will detect overlapping
+ *  read pairs and for each base pair set the base quality of the
+ *  lower-quality base to zero, thus effectively discarding it from
+ *  calling. If the two bases are identical, the quality of the other base
+ *  is increased to the sum of their qualities (capped at 200), otherwise
+ *  it is multiplied by 0.8.
+ */
+HTSLIB_EXPORT
+int bam_mplp_init_overlaps(bam_mplp_t iter);
 
-    HTSLIB_EXPORT
-    void bam_mplp_set_maxcnt(bam_mplp_t iter, int maxcnt);
+HTSLIB_EXPORT
+void bam_mplp_destroy(bam_mplp_t iter);
 
-    HTSLIB_EXPORT
-    int bam_mplp_auto(bam_mplp_t iter, int *_tid, int *_pos, int *n_plp, const bam_pileup1_t **plp);
+HTSLIB_EXPORT
+void bam_mplp_set_maxcnt(bam_mplp_t iter, int maxcnt);
 
-    HTSLIB_EXPORT
-    int bam_mplp64_auto(bam_mplp_t iter, int *_tid, hts_pos_t *_pos, int *n_plp, const bam_pileup1_t **plp);
+HTSLIB_EXPORT
+int bam_mplp_auto(bam_mplp_t iter, int *_tid, int *_pos, int *n_plp, const bam_pileup1_t **plp);
 
-    HTSLIB_EXPORT
-    void bam_mplp_reset(bam_mplp_t iter);
+HTSLIB_EXPORT
+int bam_mplp64_auto(bam_mplp_t iter, int *_tid, hts_pos_t *_pos, int *n_plp, const bam_pileup1_t **plp);
 
-    HTSLIB_EXPORT
-    void bam_mplp_constructor(bam_mplp_t iter,
-                              int (*func)(void *data, const bam1_t *b, bam_pileup_cd *cd));
+HTSLIB_EXPORT
+void bam_mplp_reset(bam_mplp_t iter);
 
-    HTSLIB_EXPORT
-    void bam_mplp_destructor(bam_mplp_t iter,
-                             int (*func)(void *data, const bam1_t *b, bam_pileup_cd *cd));
+HTSLIB_EXPORT
+void bam_mplp_constructor(bam_mplp_t iter,
+                          int (*func)(void *data, const bam1_t *b, bam_pileup_cd *cd));
+
+HTSLIB_EXPORT
+void bam_mplp_destructor(bam_mplp_t iter,
+                         int (*func)(void *data, const bam1_t *b, bam_pileup_cd *cd));
 
 #endif // ~!defined(BAM_NO_PILEUP)
 

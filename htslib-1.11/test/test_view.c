@@ -351,7 +351,7 @@ int sam_loopp(int argc, char **argv, int optind, struct opts *opts, htsFile *in,
             N++;
             if (b->core.flag & 2048)continue;
             M++;
-            if (!opts->benchmark && sam_write1(out, h, b) < 0) {
+            if (!opts->benchmark && fq_write1(out, h, b) < 0) {
                 fprintf(stderr, "Error writing output.\n");
                 goto fail;
             }
