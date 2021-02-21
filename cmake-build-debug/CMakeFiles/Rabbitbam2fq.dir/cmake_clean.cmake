@@ -1,5 +1,5 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/Rabbitbam2fq.dir/fast.c.o"
+  "CMakeFiles/Rabbitbam2fq.dir/test2bt.c.o"
   "Rabbitbam2fq"
   "Rabbitbam2fq.pdb"
 )

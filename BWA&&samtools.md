@@ -10,9 +10,9 @@ DOTO
 - [x] sam中第二列是0？
 - [x] main.c改为cpp
 - [ ] 加上fprintf
-- [ ] htslib icc -O3
+- [x] htslib icc -O3
 
-- [ ] seq和qual转化时压位
+- [x] seq和qual转化时压位 单线程还能快0.5？
 - [ ] 
 - [ ] 
 

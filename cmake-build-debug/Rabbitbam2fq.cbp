@@ -84,7 +84,7 @@
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="/Users/ylf9811/CLionProjects/Rabbitbam2fq/fast.c">
+		<Unit filename="/Users/ylf9811/CLionProjects/Rabbitbam2fq/test2bt.c">
 			<Option target="Rabbitbam2fq"/>
 		</Unit>
 		<Unit filename="/Users/ylf9811/CLionProjects/Rabbitbam2fq/CMakeLists.txt">

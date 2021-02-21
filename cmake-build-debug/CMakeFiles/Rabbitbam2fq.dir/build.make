@@ -57,27 +57,27 @@ include CMakeFiles/Rabbitbam2fq.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/Rabbitbam2fq.dir/flags.make
 
-CMakeFiles/Rabbitbam2fq.dir/fast.c.o: CMakeFiles/Rabbitbam2fq.dir/flags.make
-CMakeFiles/Rabbitbam2fq.dir/fast.c.o: ../fast.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/ylf9811/CLionProjects/Rabbitbam2fq/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/Rabbitbam2fq.dir/fast.c.o"
-	/usr/local/Cellar/gcc@8/8.4.0_1/bin/gcc-8 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/Rabbitbam2fq.dir/fast.c.o   -c /Users/ylf9811/CLionProjects/Rabbitbam2fq/fast.c
+CMakeFiles/Rabbitbam2fq.dir/test2bt.c.o: CMakeFiles/Rabbitbam2fq.dir/flags.make
+CMakeFiles/Rabbitbam2fq.dir/test2bt.c.o: ../test2bt.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/ylf9811/CLionProjects/Rabbitbam2fq/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/Rabbitbam2fq.dir/test2bt.c.o"
+	/usr/local/Cellar/gcc@8/8.4.0_1/bin/gcc-8 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/Rabbitbam2fq.dir/test2bt.c.o   -c /Users/ylf9811/CLionProjects/Rabbitbam2fq/test2bt.c
 
-CMakeFiles/Rabbitbam2fq.dir/fast.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/Rabbitbam2fq.dir/fast.c.i"
-	/usr/local/Cellar/gcc@8/8.4.0_1/bin/gcc-8 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /Users/ylf9811/CLionProjects/Rabbitbam2fq/fast.c > CMakeFiles/Rabbitbam2fq.dir/fast.c.i
+CMakeFiles/Rabbitbam2fq.dir/test2bt.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/Rabbitbam2fq.dir/test2bt.c.i"
+	/usr/local/Cellar/gcc@8/8.4.0_1/bin/gcc-8 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /Users/ylf9811/CLionProjects/Rabbitbam2fq/test2bt.c > CMakeFiles/Rabbitbam2fq.dir/test2bt.c.i
 
-CMakeFiles/Rabbitbam2fq.dir/fast.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/Rabbitbam2fq.dir/fast.c.s"
-	/usr/local/Cellar/gcc@8/8.4.0_1/bin/gcc-8 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /Users/ylf9811/CLionProjects/Rabbitbam2fq/fast.c -o CMakeFiles/Rabbitbam2fq.dir/fast.c.s
+CMakeFiles/Rabbitbam2fq.dir/test2bt.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/Rabbitbam2fq.dir/test2bt.c.s"
+	/usr/local/Cellar/gcc@8/8.4.0_1/bin/gcc-8 $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /Users/ylf9811/CLionProjects/Rabbitbam2fq/test2bt.c -o CMakeFiles/Rabbitbam2fq.dir/test2bt.c.s
 
 # Object files for target Rabbitbam2fq
 Rabbitbam2fq_OBJECTS = \
-"CMakeFiles/Rabbitbam2fq.dir/fast.c.o"
+"CMakeFiles/Rabbitbam2fq.dir/test2bt.c.o"
 
 # External object files for target Rabbitbam2fq
 Rabbitbam2fq_EXTERNAL_OBJECTS =
 
-Rabbitbam2fq: CMakeFiles/Rabbitbam2fq.dir/fast.c.o
+Rabbitbam2fq: CMakeFiles/Rabbitbam2fq.dir/test2bt.c.o
 Rabbitbam2fq: CMakeFiles/Rabbitbam2fq.dir/build.make
 Rabbitbam2fq: CMakeFiles/Rabbitbam2fq.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/ylf9811/CLionProjects/Rabbitbam2fq/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking C executable Rabbitbam2fq"

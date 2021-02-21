@@ -66,43 +66,82 @@ static inline int possibly_expand_bam_data(bam1_t *b, size_t bytes) {
  *    seq[i] = seq_nt16_str[bam_seqi(nib, i)];
  */
 
-static inline void nibble2basere(uint8_t *nib, char *seq, int len) {
-    for (int i = 0; i < len; i++)
-        seq[len - i - 1] = seq_nt16_str_re[bam_seqi(nib, i)];
-    return;
-    static const char code2base[512] =
-            "===A=C=M=G=R=S=V=T=W=Y=H=K=D=B=N"
-            "A=AAACAMAGARASAVATAWAYAHAKADABAN"
-            "C=CACCCMCGCRCSCVCTCWCYCHCKCDCBCN"
-            "M=MAMCMMMGMRMSMVMTMWMYMHMKMDMBMN"
-            "G=GAGCGMGGGRGSGVGTGWGYGHGKGDGBGN"
-            "R=RARCRMRGRRRSRVRTRWRYRHRKRDRBRN"
-            "S=SASCSMSGSRSSSVSTSWSYSHSKSDSBSN"
-            "V=VAVCVMVGVRVSVVVTVWVYVHVKVDVBVN"
-            "T=TATCTMTGTRTSTVTTTWTYTHTKTDTBTN"
-            "W=WAWCWMWGWRWSWVWTWWWYWHWKWDWBWN"
-            "Y=YAYCYMYGYRYSYVYTYWYYYHYKYDYBYN"
-            "H=HAHCHMHGHRHSHVHTHWHYHHHKHDHBHN"
-            "K=KAKCKMKGKRKSKVKTKWKYKHKKKDKBKN"
-            "D=DADCDMDGDRDSDVDTDWDYDHDKDDDBDN"
-            "B=BABCBMBGBRBSBVBTBWBYBHBKBDBBBN"
-            "N=NANCNMNGNRNSNVNTNWNYNHNKNDNBNN";
 
+static inline void nibble2basere(uint8_t *nib, char *seq, int len) {
+    static const char code2base[512] =
+            "==T=G=M=C=R=S=V=A=W=Y=H=K=D=B=N="
+            "=TTTGTMTCTRTSTVTATWTYTHTKTDTBTNT"
+            "=GTGGGMGCGRGSGVGAGWGYGHGKGDGBGNG"
+            "=MTMGMMMCMRMSMVMAMWMYMHMKMDMBMNM"
+            "=CTCGCMCCCRCSCVCACWCYCHCKCDCBCNC"
+            "=RTRGRMRCRRRSRVRARWRYRHRKRDRBRNR"
+            "=STSGSMSCSRSSSVSASWSYSHSKSDSBSNS"
+            "=VTVGVMVCVRVSVVVAVWVYVHVKVDVBVNV"
+            "=ATAGAMACARASAVAAAWAYAHAKADABANA"
+            "=WTWGWMWCWRWSWVWAWWWYWHWKWDWBWNW"
+            "=YTYGYMYCYRYSYVYAYWYYYHYKYDYBYNY"
+            "=HTHGHMHCHRHSHVHAHWHYHHHKHDHBHNH"
+            "=KTKGKMKCKRKSKVKAKWKYKHKKKDKBKNK"
+            "=DTDGDMDCDRDSDVDADWDYDHDKDDDBDND"
+            "=BTBGBMBCBRBSBVBABWBYBHBKBDBBBNB"
+            "=NTNGNMNCNRNSNVNANWNYNHNKNDNBNNN";
     int i, len2 = len / 2;
     seq[0] = 0;
 
-    for (i = 0; i < len2; i++)
+    for (i = 0; i < len2; i++) {
         // Note size_t cast helps gcc optimiser.
-        memcpy(&seq[i * 2], &code2base[(size_t) nib[i] * 2], 2);
+        memcpy(&seq[i * 2 + (len & 1)], &code2base[(size_t) nib[len2 - 1 - i] * 2], 2);
+    }
 
     if ((i *= 2) < len)
-        seq[i] = seq_nt16_str[bam_seqi(nib, i)];
+        seq[0] = seq_nt16_str_re[bam_seqi(nib, i)];
 }
 
+//static inline void nibble2basere(uint8_t *nib, char *seq, int len) {
+//
+//    for (int i = 0; i < len; i++)
+//        seq[len - i - 1] = seq_nt16_str_re[bam_seqi(nib, i)];
+//    return;
+//    static const char code2base[512] =
+//            "===A=C=M=G=R=S=V=T=W=Y=H=K=D=B=N"
+//            "A=AAACAMAGARASAVATAWAYAHAKADABAN"
+//            "C=CACCCMCGCRCSCVCTCWCYCHCKCDCBCN"
+//            "M=MAMCMMMGMRMSMVMTMWMYMHMKMDMBMN"
+//            "G=GAGCGMGGGRGSGVGTGWGYGHGKGDGBGN"
+//            "R=RARCRMRGRRRSRVRTRWRYRHRKRDRBRN"
+//            "S=SASCSMSGSRSSSVSTSWSYSHSKSDSBSN"
+//            "V=VAVCVMVGVRVSVVVTVWVYVHVKVDVBVN"
+//            "T=TATCTMTGTRTSTVTTTWTYTHTKTDTBTN"
+//            "W=WAWCWMWGWRWSWVWTWWWYWHWKWDWBWN"
+//            "Y=YAYCYMYGYRYSYVYTYWYYYHYKYDYBYN"
+//            "H=HAHCHMHGHRHSHVHTHWHYHHHKHDHBHN"
+//            "K=KAKCKMKGKRKSKVKTKWKYKHKKKDKBKN"
+//            "D=DADCDMDGDRDSDVDTDWDYDHDKDDDBDN"
+//            "B=BABCBMBGBRBSBVBTBWBYBHBKBDBBBN"
+//            "N=NANCNMNGNRNSNVNTNWNYNHNKNDNBNN";
+//
+//    int i, len2 = len / 2;
+//    seq[0] = 0;
+//
+//    for (i = 0; i < len2; i++)
+//        // Note size_t cast helps gcc optimiser.
+//        memcpy(&seq[i * 2], &code2base[(size_t) nib[i] * 2], 2);
+//
+//    if ((i *= 2) < len)
+//        seq[i] = seq_nt16_str[bam_seqi(nib, i)];
+//}
+
 static inline void nibble2base(uint8_t *nib, char *seq, int len) {
-    for (int i = 0; i < len; i++)
-        seq[i] = seq_nt16_str[bam_seqi(nib, i)];
-    return;
+//    if (random() % 10 == 0) {
+//        for (int i = 0; i < len; i++)
+//            printf("%d,", nib[i]);
+//        printf("|%d\n", len);
+//        for (int i = 0; i < len; i++)
+//            printf("%d,", seq_nt16_str[bam_seqi(nib, i)]);
+//        printf("|\n");
+//        exit(0);
+//    }
+
     static const char code2base[512] =
             "===A=C=M=G=R=S=V=T=W=Y=H=K=D=B=N"
             "A=AAACAMAGARASAVATAWAYAHAKADABAN"
