@@ -1339,9 +1339,6 @@ int sam_parse1(kstring_t *s, sam_hdr_t *h, bam1_t *b) HTS_RESULT_USED;
 HTSLIB_EXPORT
 int sam_format1(const sam_hdr_t *h, const bam1_t *b, kstring_t *str) HTS_RESULT_USED;
 
-HTSLIB_EXPORT
-int fq_format1(const sam_hdr_t *h, const bam1_t *b, kstring_t *str) HTS_RESULT_USED;
-
 /// sam_read1 - Read a record from a file
 /** @param fp   Pointer to the source file
  *  @param h    Pointer to the header previously read (fully or partially)

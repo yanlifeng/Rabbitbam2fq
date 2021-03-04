@@ -26,7 +26,7 @@ DEALINGS IN THE SOFTWARE.  */
 #include <string.h>
 #include <stdint.h>
 
-
+#include "mytimer.hpp"
 #include <cram/cram.h>
 #include <htslib/sam.h>
 #include <htslib/vcf.h>
@@ -96,7 +96,7 @@ int sam_loop(int argc, char **argv, int optind, struct opts *opts, htsFile *in, 
         if (ret != 0)
             goto fail;
     }
-
+//
 //    if (!opts->benchmark && sam_hdr_write(out, h) < 0) {
 //        fprintf(stderr, "Error writing output header.\n");
 //        goto fail;
@@ -108,8 +108,8 @@ int sam_loop(int argc, char **argv, int optind, struct opts *opts, htsFile *in, 
             goto fail;
         }
     }
-
-
+    printf("starting ...\n");
+    double t0 = get_wall_time();
     int N = 0, M = 0;
     while ((r = sam_read1(in, h, b)) >= 0) {
         N++;
@@ -124,7 +124,7 @@ int sam_loop(int argc, char **argv, int optind, struct opts *opts, htsFile *in, 
     }
     printf("total process %d reads\n", N);
     printf("total print %d reads\n", M);
-
+    printf("kernel part cost %.5f\n", get_wall_time() - t0);
 
     if (r < -1) {
         fprintf(stderr, "Error parsing input.\n");
@@ -235,6 +235,7 @@ int main(int argc, char *argv[]) {
                 break;
         }
     }
+    printf("%d %d\n", argc, optind);
     if (argc == optind) {
         fprintf(stderr,
                 "Usage: test_view [-DSI] [-t fn_ref] [-i option=value] [-bC] [-l level] [-o option=value] [-N num_reads] [-B] [-Z hdr_nuls] [-@ num_threads] [-x index_fn] [-m min_shift] [-p out] [-v] <in.bam>|<in.sam>|<in.cram> [region]\n");
@@ -270,6 +271,7 @@ int main(int argc, char *argv[]) {
     else if ((opts.flag & READ_COMPRESSED) == 0) strcat(moder, "b");
 
     in = hts_open(argv[optind], moder);
+    printf("in file %s\n", argv[optind]);
     if (in == NULL) {
         fprintf(stderr, "Error opening \"%s\"\n", argv[optind]);
         return EXIT_FAILURE;
@@ -282,6 +284,7 @@ int main(int argc, char *argv[]) {
     else if (opts.flag & WRITE_COMPRESSED) strcat(modew, "z");
     else if (opts.flag & WRITE_UNCOMPRESSED) strcat(modew, "bu");
     out = hts_open(out_fn, modew);
+    printf("in file %s\n", out_fn);
     if (out == NULL) {
         fprintf(stderr, "Error opening standard output\n");
         return EXIT_FAILURE;
@@ -295,6 +298,7 @@ int main(int argc, char *argv[]) {
     if (hts_opt_apply(out, out_opts))
         return EXIT_FAILURE;
     hts_opt_free(out_opts);
+
 
     // Create and share the thread pool
     htsThreadPool p = {NULL, 0};

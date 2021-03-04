@@ -9,5 +9,5 @@ link_directories(${LINK_DIR})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fopenmp")
 
-add_executable(Rabbitbam2fq test2bt.c)
+add_executable(Rabbitbam2fq fast.c)
 target_link_libraries(Rabbitbam2fq libhts.a)

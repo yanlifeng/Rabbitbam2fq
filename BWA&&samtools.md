@@ -11,8 +11,8 @@ DOTO
 - [x] main.c改为cpp
 - [ ] 加上fprintf
 - [x] htslib icc -O3
-
 - [x] seq和qual转化时压位 单线程还能快0.5？
+- [ ] CRC32 checksum ？？
 - [ ] 
 - [ ] 
 
@@ -300,3 +300,201 @@ samtool view ！！ no write
 | 2            | 5.54s user 0.93s system 251% cpu 2.579 total |
 | 4            | 6.52s user 1.05s system 485% cpu 1.560 total |
 | 8            | 7.28s user 1.00s system 628% cpu 1.316 total |
+
+0221 optimize nibble2basere function, now single is 0.5s faster.
+
+| threadNumber | Cost                                         |
+| ------------ | -------------------------------------------- |
+| 1            | 4.97s user 0.94s system 132% cpu 4.449 total |
+| 2            | 4.95s user 0.84s system 252% cpu 2.287 total |
+| 4            | 5.82s user 1.00s system 498% cpu 1.369 total |
+| 8            | 6.51s user 1.08s system 632% cpu 1.199 total |
+
+0222 摸大🐟
+
+0223 it seems that read data from sam file is faster.(maybe the reason is that read part can be muti-threading)
+
+| threadNumber | Cost                                         |
+| ------------ | -------------------------------------------- |
+| 1            | 2.65s user 1.11s system 160% cpu 2.343 total |
+| 2            | 2.67s user 1.11s system 296% cpu 1.276 total |
+| 4            | 4.10s user 1.54s system 550% cpu 1.025 total |
+| 8            | 3.96s user 1.42s system 540% cpu 0.996 total |
+
+今天又有新发现，bam_read1里面也有多线程。在bgzf_read_block中使用了多线程，具体的还在看。
+
+
+
+现在的思路有点迷糊了，view的多线程看上去效果很好，具体怎么实现的（for unidex bam file）需要好好看看。会不会它实际上也是外层串行的？对于index的数据还能更快？
+
+（https://www.cnblogs.com/hanyonglu/archive/2011/05/07/2039916.html学了新的传参方法）
+
+通过分析文件名，得到format.format是bam；通过分析前几个字节的信息，得到format.compression是bgzf，然后调用bgzf_thread_pool函数弄了一个线程池。
+
+```c
+pthread_create(&mt->io_task, NULL,fp->is_write ? bgzf_mt_writer : bgzf_mt_reader, fp);
+```
+
+这个是创建线程的语句
+
+每次从任务队列（hts_tpool_process q）里面拿出一个result
+
+```
+/*
+ * An output, after job has executed.
+ */
+struct hts_tpool_result {
+    struct hts_tpool_result *next;
+    void (*result_cleanup)(void *data);
+    uint64_t serial; // sequential number for ordering
+    void *data;      // result itself
+};
+```
+
+res中的data，即bgzf_job，然后就有了想要的指针什么的
+
+```
+typedef struct bgzf_job {
+    BGZF *fp;
+    unsigned char comp_data[BGZF_MAX_BLOCK_SIZE];
+    size_t comp_len;
+    unsigned char uncomp_data[BGZF_MAX_BLOCK_SIZE];
+    size_t uncomp_len;
+    int errcode;
+    int64_t block_address;
+    int hit_eof;
+} bgzf_job;
+```
+
+现在的关键是找到hts_tpool_process q这个队列是怎么构建的。
+
+不太对，最最开始的hts_tpool_init里面
+
+```
+typedef struct {
+    struct hts_tpool *p;
+    int idx;
+    pthread_t tid;
+    pthread_cond_t  pending_c; // when waiting for a job
+} hts_tpool_worker;
+```
+
+```
+for (t_idx = 0; t_idx < n; t_idx++) {
+    printf("new thread %d\n", t_idx);
+    hts_tpool_worker *w = &p->t[t_idx];
+    p->t_stack[t_idx] = 0;
+    w->p = p;
+    w->idx = t_idx;
+    pthread_cond_init(&w->pending_c, NULL);
+    if (0 != pthread_create(&w->tid, NULL, tpool_worker, w)) {
+        goto cleanup;
+    }
+}
+```
+
+这个地方，在啥都没干的时候定义了n个线程，任务就是static void *tpool_worker(void *arg)；这个时候所有的线程就已经开始干活了，
+
+（https://www.cnblogs.com/qyaizs/articles/2039101.html关于tpyedef struct等）
+
+实际上这个时候已经有n个线程开始执行tpool_worker了，我们去tpool_worker里面看一下。
+
+```
+* Once woken, each thread checks each process-queue in the pool in turn,
+* looking for input jobs that also have room for the output (if it requires
+* storing).  If found, we execute it and repeat.
+```
+
+这个是注释，基本上也说清楚了，就是检测process-queue中是否有可以操作的job，有就进行hts_tpool_add_result，不过同时运行了j->func(j->arg)，暂时不知道这个func是啥，不过应该是热点，因为它的返回值就是data，后面对data的处理就是上面samloop中bgzf_mt_reader的简单拷贝了。
+
+然后就和上面发现的衔接起来了，hts_set_opt中调用了bgzf_thread_pool，创建了io_task线程，运行bgzf_mt_reader方法：
+
+```
+pthread_create(&mt->io_task, NULL, fp->is_write ? bgzf_mt_writer : bgzf_mt_reader, fp);
+```
+
+里面的热点，即vtune里面飙出来的bgzf_decode_func：
+
+```
+if (hts_tpool_dispatch3(mt->pool, mt->out_queue, bgzf_decode_func, j,
+                        job_cleanup, job_cleanup, 0) < 0) {
+    job_cleanup(j);
+    goto err;
+}
+```
+
+hts_tpool_dispatch3：Adds an item to the work pool.
+
+```
+j->func = exec_func;
+j->arg = arg;
+j->job_cleanup = job_cleanup;
+j->result_cleanup = result_cleanup;
+j->next = NULL;
+j->p = p;
+j->q = q;
+j->serial = q->curr_serial++;
+```
+
+```
+if (q->input_tail) {
+    q->input_tail->next = j;
+    q->input_tail = j;
+} else {
+    q->input_head = q->input_tail = j;
+}
+```
+
+可以看到func即bgzf_decode_func，现在把j放到了q里面，同时tpool_worker检测到j，执行j->func，我们回到tpool_worker里面：
+
+```
+pthread_mutex_unlock(&p->pool_m);
+
+DBG_OUT(stderr, "%d: Processing queue %p, serial %"PRId64"\n",
+        worker_id(j->p), q, j->serial);
+
+if (hts_tpool_add_result(j, j->func(j->arg)) < 0)
+    goto err;
+//memset(j, 0xbb, sizeof(*j));
+free(j);
+
+pthread_mutex_lock(&p->pool_m);
+```
+
+可以看到j->func(j->arg)是没有锁的，即多线程执行的！
+
+
+
+0224
+
+今天想着去ASC上跑一跑，结果报错了
+
+```
+./fast: symbol lookup error: ./fast: undefined symbol: fq_write1
+```
+
+搜了一下，大体的意思就是链接库的版本不对，我新编译好的带fq_write1函数的版本没用上，ldd(otool -L on mac)命令发现
+
+```
+	libhts.so.3 => /usr/local/lib/libhts.so.3 (0x00007fcbe9a1f000)
+```
+
+不知道为啥不去我指定的目录里面找，还是去了默认的目录，暂时的解决办法是往默认目录重新编译一遍。
+
+asc上跑的很慢很慢的，最后好像要释放一些东西还是咋，大概是hdd读写太慢了。
+
+0225
+
+分析vtune发现
+
+单线程的
+
+![image-20210225102501724](/Users/ylf9811/Library/Application Support/typora-user-images/image-20210225102501724.png)
+
+不开线程的
+
+![image-20210225102540234](/Users/ylf9811/Library/Application Support/typora-user-images/image-20210225102540234.png)
+
+可以看到，不开-@的比较正常，读写三七开，读里面bgzf_read函数里面的read_block()最慢，和预期的一样；
+
+但是开-@的程序，哪怕是只开一个线程，时间都记在了thread里面。

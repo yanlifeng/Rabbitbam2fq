@@ -1,16 +1,107 @@
- "==T=G=M=C=R=S=V=A=W=Y=H=K=D=B=N="
-            "=TTTGTMTCTRTSTVTATWTYTHTKTDTBTNT"
-            "=GTGGGMGCGRGSGVGAGWGYGHGKGDGBGNG"
-            "=MTMGMMMCMRMSMVMAMWMYMHMKMDMBMNM"
-            "=CTCGCMCCCRCSCVCACWCYCHCKCDCBCNC"
-            "=RTRGRMRCRRRSRVRARWRYRHRKRDRBRNR"
-            "=STSGSMSCSRSSSVSASWSYSHSKSDSBSNS"
-            "=VTVGVMVCVRVSVVVAVWVYVHVKVDVBVNV"
-            "=ATAGAMACARASAVAAAWAYAHAKADABANA"
-            "=WTWGWMWCWRWSWVWAWWWYWHWKWDWBWNW"
-            "=YTYGYMYCYRYSYVYAYWYYYHYKYDYBYNY"
-            "=HTHGHMHCHRHSHVHAHWHYHHHKHDHBHNH"
-            "=KTKGKMKCKRKSKVKAKWKYKHKKKDKBKNK"
-            "=DTDGDMDCDRDSDVDADWDYDHDKDDDBDND"
-            "=BTBGBMBCBRBSBVBABWBYBHBKBDBBBNB"
-            "=NTNGNMNCNRNSNVNANWNYNHNKNDNBNNN";
+if (fp->state) {
+                SAM_state *fd = (SAM_state *) fp->state;
+
+                // Threaded output
+                if (!fd->h) {
+                    printf("!fd->h\n");
+                    // NB: discard const.  We don't actually modify sam_hdr_t here,
+                    // just data pointed to by it (which is a bit weasely still),
+                    // but out cached pointer must be non-const as we want to
+                    // destroy it later on and sam_hdr_destroy takes non-const.
+                    //
+                    // We do this because some tools do sam_hdr_destroy; sam_close
+                    // while others do sam_close; sam_hdr_destroy.  The former is an
+                    // issue as we need the header still when flushing.
+                    fd->h = (sam_hdr_t *) h;
+                    fd->h->ref_count++;
+
+                    if (pthread_create(&fd->dispatcher, NULL, sam_dispatcher_write, fp) != 0)
+                        return -2;
+                }
+
+                if (fd->h != h) {
+                    hts_log_error("SAM multi-threaded decoding does not support changing header");
+                    return -2;
+                }
+
+                // Find a suitable BAM array to copy to
+                sp_bams *gb = fd->curr_bam;
+                if (!gb) {
+                    pthread_mutex_lock(&fd->lines_m);
+                    if (fd->bams) {
+                        fd->curr_bam = gb = fd->bams;
+                        fd->bams = gb->next;
+                        gb->next = NULL;
+                        gb->nbams = 0;
+                        pthread_mutex_unlock(&fd->lines_m);
+                    } else {
+                        pthread_mutex_unlock(&fd->lines_m);
+                        if (!(gb = calloc(1, sizeof(*gb)))) return -1;
+                        if (!(gb->bams = calloc(NB, sizeof(*gb->bams)))) {
+                            free(gb);
+                            return -1;
+                        }
+                        gb->nbams = 0;
+                        gb->abams = NB;
+                        gb->fd = fd;
+                        fd->curr_idx = 0;
+                        fd->curr_bam = gb;
+                    }
+                }
+
+                if (!bam_copy1(&gb->bams[gb->nbams++], b))
+                    return -2;
+
+                // Dispatch if full
+                if (gb->nbams == NB) {
+                    gb->serial = fd->serial++;
+                    //fprintf(stderr, "Dispatch another %d bams\n", NB);
+                    pthread_mutex_lock(&fd->command_m);
+                    if (fd->errcode != 0) {
+                        pthread_mutex_unlock(&fd->command_m);
+                        return -fd->errcode;
+                    }
+                    if (hts_tpool_dispatch3(fd->p, fd->q, sam_format_worker, gb,
+                                            cleanup_sp_bams,
+                                            cleanup_sp_lines, 0) < 0) {
+                        pthread_mutex_unlock(&fd->command_m);
+                        return -1;
+                    }
+                    pthread_mutex_unlock(&fd->command_m);
+                    fd->curr_bam = NULL;
+                }
+
+                // Dummy value as we don't know how long it really is.
+                // We could track file sizes via a SAM_state field, but I don't think
+                // it is necessary.
+                return 1;
+            } else {
+                if (sam_format1(h, b, &fp->line) < 0) return -1;
+                kputc('\n', &fp->line);
+                if (fp->is_bgzf) {
+                    if (bgzf_write(fp->fp.bgzf, fp->line.s, fp->line.l) != fp->line.l) return -1;
+                } else {
+                    if (hwrite(fp->fp.hfile, fp->line.s, fp->line.l) != fp->line.l) return -1;
+                }
+
+                if (fp->idx) {
+                    if (fp->format.compression == bgzf) {
+                        if (bgzf_idx_push(fp->fp.bgzf, fp->idx, b->core.tid, b->core.pos, bam_endpos(b),
+                                          bgzf_tell(fp->fp.bgzf), !(b->core.flag & BAM_FUNMAP)) < 0) {
+                            hts_log_error(
+                                    "Read '%s' with ref_name='%s', ref_length=%"PRIhts_pos", flags=%d, pos=%"PRIhts_pos" cannot be indexed",
+                                    bam_get_qname(b), sam_hdr_tid2name(h, b->core.tid), sam_hdr_tid2len(h, b->core.tid),
+                                    b->core.flag, b->core.pos + 1);
+                            return -1;
+                        }
+                    } else {
+                        if (hts_idx_push(fp->idx, b->core.tid, b->core.pos, bam_endpos(b),
+                                         bgzf_tell(fp->fp.bgzf), !(b->core.flag & BAM_FUNMAP)) < 0) {
+                            hts_log_error(
+                                    "Read '%s' with ref_name='%s', ref_length=%"PRIhts_pos", flags=%d, pos=%"PRIhts_pos" cannot be indexed",
+                                    bam_get_qname(b), sam_hdr_tid2name(h, b->core.tid), sam_hdr_tid2len(h, b->core.tid),
+                                    b->core.flag, b->core.pos + 1);
+                            return -1;
+                        }
+                    }
+                }

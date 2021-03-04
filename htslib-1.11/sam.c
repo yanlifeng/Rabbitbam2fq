@@ -38,23 +38,24 @@ DEALINGS IN THE SOFTWARE.  */
 #include <inttypes.h>
 
 // Suppress deprecation message for cigar_tab, which we initialise
-#include "htslib/hts_defs.h"
+#include <htslib/hts_defs.h>
 
 #undef HTS_DEPRECATED
 #define HTS_DEPRECATED(message)
 
-#include "htslib/sam.h"
-#include "htslib/bgzf.h"
-#include "cram/cram.h"
-#include "hts_internal.h"
-#include "sam_internal.h"
-#include "htslib/hfile.h"
-#include "htslib/hts_endian.h"
-#include "header.h"
+#include <htslib/sam.h>
+#include <htslib/bgzf.h>
+#include <cram/cram.h>
+#include <hts_internal.h>
+#include <sam_internal.h>
+#include <htslib/hfile.h>
+#include <htslib/hts_endian.h>
+#include <header.h>
 
-#include "htslib/khash.h"
+#include <htslib/khash.h>
 
-KHASH_DECLARE(s2i, kh_cstr_t, int64_t)
+KHASH_DECLARE(s2i, kh_cstr_t, int64_t
+)
 
 #ifndef EFTYPE
 #define EFTYPE ENOEXEC
@@ -68,28 +69,29 @@ KHASH_DECLARE(s2i, kh_cstr_t, int64_t)
  **********************/
 
 HTSLIB_EXPORT
-const int8_t bam_cigar_table[256] = {
-        // 0 .. 47
+const int8_t
+        bam_cigar_table[256] = {
+// 0 .. 47
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 
-        // 48 .. 63  (including =)
+// 48 .. 63  (including =)
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, BAM_CEQUAL, -1, -1,
 
-        // 64 .. 79  (including MIDNHB)
+// 64 .. 79  (including MIDNHB)
         -1, -1, BAM_CBACK, -1, BAM_CDEL, -1, -1, -1,
         BAM_CHARD_CLIP, BAM_CINS, -1, -1, -1, BAM_CMATCH, BAM_CREF_SKIP, -1,
 
-        // 80 .. 95  (including SPX)
+// 80 .. 95  (including SPX)
         BAM_CPAD, -1, -1, BAM_CSOFT_CLIP, -1, -1, -1, -1,
         BAM_CDIFF, -1, -1, -1, -1, -1, -1, -1,
 
-        // 96 .. 127
+// 96 .. 127
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 
-        // 128 .. 255
+// 128 .. 255
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -129,14 +131,17 @@ void sam_hdr_destroy(sam_hdr_t *bh) {
     if (bh->hrecs)
         sam_hrecs_free(bh->hrecs);
     if (bh->sdict)
-        kh_destroy(s2i, (khash_t(s2i) * ) bh->sdict);
+        kh_destroy(s2i, (khash_t(s2i) * )
+                bh->sdict);
     free(bh);
 }
 
 // Copy the sam_hdr_t::sdict hash, used to store the real lengths of long
 // references before sam_hdr_t::hrecs is populated
 int sam_hdr_dup_sdict(const sam_hdr_t *h0, sam_hdr_t *h) {
-    const khash_t(s2i) *src_long_refs = (khash_t(s2i) *) h0->sdict;
+    const khash_t(s2i)
+            *src_long_refs = (khash_t(s2i) *)
+            h0->sdict;
     khash_t(s2i) *dest_long_refs = kh_init(s2i);
     int i;
     if (!dest_long_refs) return -1;
@@ -2309,11 +2314,7 @@ static SAM_state *sam_state_create(htsFile *fp) {
 
 static int sam_format1_append(const bam_hdr_t *h, const bam1_t *b, kstring_t *str);
 
-static int fq_format1_append(const bam_hdr_t *h, const bam1_t *b, kstring_t *str);
-
 static void *sam_format_worker(void *arg);
-
-static void *fq_format_worker(void *arg);
 
 static void sam_state_err(SAM_state *fd, int errcode) {
     pthread_mutex_lock(&fd->command_m);
@@ -2373,8 +2374,7 @@ int sam_state_destroy(htsFile *fp) {
                 // Dispatch the last partial block.
                 sp_bams *gb = fd->curr_bam;
                 if (!ret && gb && gb->nbams > 0 && fd->q) {
-                    if (tagFQ) ret = hts_tpool_dispatch(fd->p, fd->q, fq_format_worker, gb);
-                    else ret = hts_tpool_dispatch(fd->p, fd->q, sam_format_worker, gb);
+                    ret = hts_tpool_dispatch(fd->p, fd->q, sam_format_worker, gb);
 
                 }
 
@@ -2897,73 +2897,6 @@ static void *sam_format_worker(void *arg) {
     return NULL;
 }
 
-static void *fq_format_worker(void *arg) {
-    sp_bams *gb = (sp_bams *) arg;
-    sp_lines *gl = NULL;
-    int i;
-    SAM_state *fd = gb->fd;
-    htsFile *fp = fd->fp;
-
-    // Use a block of SAM strings we had earlier if available.
-    pthread_mutex_lock(&fd->lines_m);
-    if (fd->lines) {
-        gl = fd->lines;
-        fd->lines = gl->next;
-    }
-    pthread_mutex_unlock(&fd->lines_m);
-
-    if (gl == NULL) {
-        gl = calloc(1, sizeof(*gl));
-        if (!gl) {
-            sam_state_err(fd, ENOMEM);
-            return NULL;
-        }
-        gl->alloc = gl->data_size = 0;
-        gl->data = NULL;
-    }
-    gl->serial = gb->serial;
-    gl->next = NULL;
-
-    kstring_t ks = {0, gl->alloc, gl->data};
-
-    for (i = 0; i < gb->nbams; i++) {
-        if (fq_format1_append(fd->h, &gb->bams[i], &ks) < 0) {
-            sam_state_err(fd, errno ? errno : EIO);
-            goto err;
-        }
-        kputc('\n', &ks);
-    }
-
-    pthread_mutex_lock(&fd->lines_m);
-    gl->data_size = ks.l;
-    gl->alloc = ks.m;
-    gl->data = ks.s;
-
-    if (fp->idx) {
-        // Keep hold of the bam array a little longer as
-        // sam_dispatcher_write needs to use them for building the index.
-        gl->bams = gb;
-    } else {
-        // Add bam array to free-list
-        gb->next = fd->bams;
-        fd->bams = gb;
-    }
-    pthread_mutex_unlock(&fd->lines_m);
-
-    return gl;
-
-    err:
-    // Possible race between this and fd->curr_bam.
-    // Easier to not free and leave it on the input list so it
-    // gets freed there instead?
-    // sam_free_sp_bams(gb);
-    if (gl) {
-        free(gl->data);
-        free(gl);
-    }
-    return NULL;
-}
-
 int sam_set_thread_pool(htsFile *fp, htsThreadPool *p) {
     if (fp->state)
         return 0;
@@ -3136,141 +3069,137 @@ int sam_read1(htsFile *fp, sam_hdr_t *h, bam1_t *b) {
     }
 }
 
-static int fq_format1_append(const bam_hdr_t *h, const bam1_t *b, kstring_t *str) {
-    int i, r = 0;
-    const bam1_core_t *c = &b->core;
 
-    if (c->l_qname == 0)
-        return -1;
-    r |= kputc_('@', str); // query name
-    r |= kputsn_(bam_get_qname(b), c->l_qname - 1 - c->l_extranul, str);
-    r |= kputc_('\n', str); // query name
+static int sam_format1_append(const bam_hdr_t *h, const bam1_t *b, kstring_t *str) {
+    if (tagFQ) {
+        int i, r = 0;
+        const bam1_core_t *c = &b->core;
 
-    if (c->l_qseq) { // seq and qual
-        uint8_t *s = bam_get_seq(b);
-        if (ks_resize(str, str->l + 4 + 2 * c->l_qseq) < 0) goto mem_err;
-        char *cp = str->s + str->l;
+        if (c->l_qname == 0)
+            return -1;
+        r |= kputc_('@', str); // query name
+        r |= kputsn_(bam_get_qname(b), c->l_qname - 1 - c->l_extranul, str);
+        r |= kputc_('\n', str); // query name
 
-        // Sequence, 2 bases at a time
-        if (b->core.flag & 16) nibble2basere(s, cp, c->l_qseq);
-        else nibble2base(s, cp, c->l_qseq);
-        cp[c->l_qseq] = '\n';
-        cp[c->l_qseq + 1] = '+';
-        cp[c->l_qseq + 2] = '\n';
-        cp += c->l_qseq + 3;
+        if (c->l_qseq) { // seq and qual
+            uint8_t *s = bam_get_seq(b);
+            if (ks_resize(str, str->l + 4 + 2 * c->l_qseq) < 0) goto mem_err;
+            char *cp = str->s + str->l;
 
-        // Quality
-        s = bam_get_qual(b);
-        i = 0;
-        if (s[0] == 0xff) {
-            cp[i++] = '*';
-        } else {
-            // local copy of c->l_qseq to aid unrolling
-            uint32_t lqseq = c->l_qseq;
-            if (b->core.flag & 16) {
-                for (i = 0; i < lqseq; ++i)
-                    cp[lqseq - i - 1] = s[i] + 33;
+            // Sequence, 2 bases at a time
+            if (b->core.flag & 16) nibble2basere(s, cp, c->l_qseq);
+            else nibble2base(s, cp, c->l_qseq);
+            cp[c->l_qseq] = '\n';
+            cp[c->l_qseq + 1] = '+';
+            cp[c->l_qseq + 2] = '\n';
+            cp += c->l_qseq + 3;
+
+            // Quality
+            s = bam_get_qual(b);
+            i = 0;
+            if (s[0] == 0xff) {
+                cp[i++] = '*';
             } else {
+                // local copy of c->l_qseq to aid unrolling
+                uint32_t lqseq = c->l_qseq;
+                if (b->core.flag & 16) {
+                    for (i = 0; i < lqseq; ++i)
+                        cp[lqseq - i - 1] = s[i] + 33;
+                } else {
+                    for (i = 0; i < lqseq; ++i)
+                        cp[i] = s[i] + 33;
+                }
+
+            }
+            cp[i] = 0;
+            cp += i;
+            str->l = cp - str->s;
+        } else r |= kputsn_("*\n*", 3, str);
+
+
+        return str->l;
+    } else {
+
+        int i, r = 0;
+        uint8_t *s, *end;
+        const bam1_core_t *c = &b->core;
+        if (c->l_qname == 0)
+            return -1;
+        r |= kputsn_(bam_get_qname(b), c->l_qname - 1 - c->l_extranul, str);
+        r |= kputc_('\t', str); // query name
+        r |= kputw(c->flag, str);
+        r |= kputc_('\t', str); // flag
+        if (c->tid >= 0) { // chr
+            r |= kputs(h->target_name[c->tid], str);
+            r |= kputc_('\t', str);
+        } else r |= kputsn_("*\t", 2, str);
+        r |= kputll(c->pos + 1, str);
+        r |= kputc_('\t', str); // pos
+        r |= kputw(c->qual, str);
+        r |= kputc_('\t', str); // qual
+        if (c->n_cigar) { // cigar
+            uint32_t *cigar = bam_get_cigar(b);
+            for (i = 0; i < c->n_cigar; ++i) {
+                r |= kputw(bam_cigar_oplen(cigar[i]), str);
+                r |= kputc_(bam_cigar_opchr(cigar[i]), str);
+            }
+        } else r |= kputc_('*', str);
+        r |= kputc_('\t', str);
+        if (c->mtid < 0) r |= kputsn_("*\t", 2, str); // mate chr
+        else if (c->mtid == c->tid) r |= kputsn_("=\t", 2, str);
+        else {
+            r |= kputs(h->target_name[c->mtid], str);
+            r |= kputc_('\t', str);
+        }
+        r |= kputll(c->mpos + 1, str);
+        r |= kputc_('\t', str); // mate pos
+        r |= kputll(c->isize, str);
+        r |= kputc_('\t', str); // template len
+        if (c->l_qseq) { // seq and qual
+            uint8_t *s = bam_get_seq(b);
+            if (ks_resize(str, str->l + 2 + 2 * c->l_qseq) < 0) goto mem_err;
+            char *cp = str->s + str->l;
+
+            // Sequence, 2 bases at a time
+            nibble2base(s, cp, c->l_qseq);
+            cp[c->l_qseq] = '\t';
+            cp += c->l_qseq + 1;
+
+            // Quality
+            s = bam_get_qual(b);
+            i = 0;
+            if (s[0] == 0xff) {
+                cp[i++] = '*';
+            } else {
+                // local copy of c->l_qseq to aid unrolling
+                uint32_t lqseq = c->l_qseq;
                 for (i = 0; i < lqseq; ++i)
                     cp[i] = s[i] + 33;
             }
+            cp[i] = 0;
+            cp += i;
+            str->l = cp - str->s;
+        } else r |= kputsn_("*\t*", 3, str);
+
+        s = bam_get_aux(b); // aux
+        end = b->data + b->l_data;
+
+        while (end - s >= 4) {
+            r |= kputc_('\t', str);
+            if ((s = (uint8_t *) sam_format_aux1(s, s[2], s + 3, end, str)) == NULL)
+                goto bad_aux;
         }
-        cp[i] = 0;
-        cp += i;
-        str->l = cp - str->s;
-    } else r |= kputsn_("*\n*", 3, str);
+        r |= kputsn("", 0, str); // nul terminate
+        if (r < 0) goto mem_err;
 
+        return str->l;
 
-    return str->l;
-
-
-    mem_err:
-    hts_log_error("Out of memory");
-    errno = ENOMEM;
-    return -1;
-}
-
-static int sam_format1_append(const bam_hdr_t *h, const bam1_t *b, kstring_t *str) {
-    int i, r = 0;
-    uint8_t *s, *end;
-    const bam1_core_t *c = &b->core;
-    if (c->l_qname == 0)
+        bad_aux:
+        hts_log_error("Corrupted aux data for read %.*s",
+                      b->core.l_qname, bam_get_qname(b));
+        errno = EINVAL;
         return -1;
-    r |= kputsn_(bam_get_qname(b), c->l_qname - 1 - c->l_extranul, str);
-    r |= kputc_('\t', str); // query name
-    r |= kputw(c->flag, str);
-    r |= kputc_('\t', str); // flag
-    if (c->tid >= 0) { // chr
-        r |= kputs(h->target_name[c->tid], str);
-        r |= kputc_('\t', str);
-    } else r |= kputsn_("*\t", 2, str);
-    r |= kputll(c->pos + 1, str);
-    r |= kputc_('\t', str); // pos
-    r |= kputw(c->qual, str);
-    r |= kputc_('\t', str); // qual
-    if (c->n_cigar) { // cigar
-        uint32_t *cigar = bam_get_cigar(b);
-        for (i = 0; i < c->n_cigar; ++i) {
-            r |= kputw(bam_cigar_oplen(cigar[i]), str);
-            r |= kputc_(bam_cigar_opchr(cigar[i]), str);
-        }
-    } else r |= kputc_('*', str);
-    r |= kputc_('\t', str);
-    if (c->mtid < 0) r |= kputsn_("*\t", 2, str); // mate chr
-    else if (c->mtid == c->tid) r |= kputsn_("=\t", 2, str);
-    else {
-        r |= kputs(h->target_name[c->mtid], str);
-        r |= kputc_('\t', str);
     }
-    r |= kputll(c->mpos + 1, str);
-    r |= kputc_('\t', str); // mate pos
-    r |= kputll(c->isize, str);
-    r |= kputc_('\t', str); // template len
-    if (c->l_qseq) { // seq and qual
-        uint8_t *s = bam_get_seq(b);
-        if (ks_resize(str, str->l + 2 + 2 * c->l_qseq) < 0) goto mem_err;
-        char *cp = str->s + str->l;
-
-        // Sequence, 2 bases at a time
-        nibble2base(s, cp, c->l_qseq);
-        cp[c->l_qseq] = '\t';
-        cp += c->l_qseq + 1;
-
-        // Quality
-        s = bam_get_qual(b);
-        i = 0;
-        if (s[0] == 0xff) {
-            cp[i++] = '*';
-        } else {
-            // local copy of c->l_qseq to aid unrolling
-            uint32_t lqseq = c->l_qseq;
-            for (i = 0; i < lqseq; ++i)
-                cp[i] = s[i] + 33;
-        }
-        cp[i] = 0;
-        cp += i;
-        str->l = cp - str->s;
-    } else r |= kputsn_("*\t*", 3, str);
-
-    s = bam_get_aux(b); // aux
-    end = b->data + b->l_data;
-
-    while (end - s >= 4) {
-        r |= kputc_('\t', str);
-        if ((s = (uint8_t *) sam_format_aux1(s, s[2], s + 3, end, str)) == NULL)
-            goto bad_aux;
-    }
-    r |= kputsn("", 0, str); // nul terminate
-    if (r < 0) goto mem_err;
-
-    return str->l;
-
-    bad_aux:
-    hts_log_error("Corrupted aux data for read %.*s",
-                  b->core.l_qname, bam_get_qname(b));
-    errno = EINVAL;
-    return -1;
-
     mem_err:
     hts_log_error("Out of memory");
     errno = ENOMEM;
@@ -3282,10 +3211,6 @@ int sam_format1(const bam_hdr_t *h, const bam1_t *b, kstring_t *str) {
     return sam_format1_append(h, b, str);
 }
 
-int fq_format1(const bam_hdr_t *h, const bam1_t *b, kstring_t *str) {
-    str->l = 0;
-    return fq_format1_append(h, b, str);
-}
 
 // Sadly we need to be able to modify the bam_hdr here so we can
 // reference count the structure.
@@ -3298,7 +3223,7 @@ int fq_write1(htsFile *fp, const sam_hdr_t *h, const bam1_t *b) {
 
         // Threaded output
         if (!fd->h) {
-            printf("!fd->h hh hhh hhhh\n");
+            printf("!fd->h\n");
             // NB: discard const.  We don't actually modify sam_hdr_t here,
             // just data pointed to by it (which is a bit weasely still),
             // but out cached pointer must be non-const as we want to
@@ -3318,6 +3243,7 @@ int fq_write1(htsFile *fp, const sam_hdr_t *h, const bam1_t *b) {
             hts_log_error("SAM multi-threaded decoding does not support changing header");
             return -2;
         }
+
         // Find a suitable BAM array to copy to
         sp_bams *gb = fd->curr_bam;
         if (!gb) {
@@ -3355,7 +3281,7 @@ int fq_write1(htsFile *fp, const sam_hdr_t *h, const bam1_t *b) {
                 pthread_mutex_unlock(&fd->command_m);
                 return -fd->errcode;
             }
-            if (hts_tpool_dispatch3(fd->p, fd->q, fq_format_worker, gb,
+            if (hts_tpool_dispatch3(fd->p, fd->q, sam_format_worker, gb,
                                     cleanup_sp_bams,
                                     cleanup_sp_lines, 0) < 0) {
                 pthread_mutex_unlock(&fd->command_m);
@@ -3370,7 +3296,7 @@ int fq_write1(htsFile *fp, const sam_hdr_t *h, const bam1_t *b) {
         // it is necessary.
         return 1;
     } else {
-        if (fq_format1(h, b, &fp->line) < 0) return -1;
+        if (sam_format1(h, b, &fp->line) < 0) return -1;
         kputc('\n', &fp->line);
         if (fp->is_bgzf) {
             if (bgzf_write(fp->fp.bgzf, fp->line.s, fp->line.l) != fp->line.l) return -1;
@@ -3402,8 +3328,6 @@ int fq_write1(htsFile *fp, const sam_hdr_t *h, const bam1_t *b) {
 
         return fp->line.l;
     }
-
-
 }
 
 int sam_write1(htsFile *fp, const sam_hdr_t *h, const bam1_t *b) {
@@ -3757,7 +3681,8 @@ int bam_aux_update_str(bam1_t *b, const char tag[2], int len, const char *data) 
 }
 
 int bam_aux_update_int(bam1_t *b, const char tag[2], int64_t val) {
-    uint32_t sz, old_sz = 0, new = 0;
+    uint32_t
+            sz, old_sz = 0, new = 0;
     uint8_t *s, type;
 
     if (val < INT32_MIN || val > UINT32_MAX) {
@@ -3853,7 +3778,8 @@ int bam_aux_update_int(bam1_t *b, const char tag[2], int64_t val) {
 
 int bam_aux_update_float(bam1_t *b, const char tag[2], float val) {
     uint8_t *s = bam_aux_get(b, tag);
-    int shrink = 0, new = 0;
+    int shrink = 0,
+            new = 0;
 
     if (s) { // Tag present - what was it?
         switch (*s) {
@@ -3895,7 +3821,8 @@ int bam_aux_update_array(bam1_t *b, const char tag[2],
                          uint8_t type, uint32_t items, void *data) {
     uint8_t *s = bam_aux_get(b, tag);
     size_t old_sz = 0, new_sz;
-    int new = 0;
+    int
+            new = 0;
 
     if (s) { // Tag present
         if (*s != 'B') {
@@ -4413,9 +4340,11 @@ int bam_plp_insertion(const bam_pileup1_t *p, kstring_t *ins, int *del_len) {
  ***********************/
 
 // Dictionary of overlapping reads
-KHASH_MAP_INIT_STR(olap_hash, lbnode_t *)
+KHASH_MAP_INIT_STR(olap_hash, lbnode_t
+        *)
 
-typedef khash_t(olap_hash) olap_hash_t;
+typedef khash_t(olap_hash)
+        olap_hash_t;
 
 struct bam_plp_s {
     mempool_t *mp;
