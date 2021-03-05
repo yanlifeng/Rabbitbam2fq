@@ -2746,7 +2746,7 @@ static void *sam_dispatcher_write(void *vp) {
         sp_lines *gl = (sp_lines *) hts_tpool_result_data(r);
 //        printf("now is writing gl : %s\n", gl->data);
         if (!gl) {
-            sam_state_err(fd, ENOMEM);
+            sam_state_err(fd, ENOMEM);  
             goto err;
         }
         if (fp->idx) {
