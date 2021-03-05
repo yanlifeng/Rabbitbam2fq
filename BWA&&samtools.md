@@ -498,3 +498,74 @@ asc上跑的很慢很慢的，最后好像要释放一些东西还是咋，大�
 可以看到，不开-@的比较正常，读写三七开，读里面bgzf_read函数里面的read_block()最慢，和预期的一样；
 
 但是开-@的程序，哪怕是只开一个线程，时间都记在了thread里面。
+
+#### 0305
+
+其实-@ 1 并不是一个线程在工作
+
+执行fast.c的主线程
+
+```c
+p.pool = hts_tpool_init(opts.nthreads);
+if (!p.pool) {
+    fprintf(stderr, "Error creating thread pool\n");
+    exit_code = 1;
+} else {
+    hts_set_opt(in, HTS_OPT_THREAD_POOL, &p);
+    hts_set_opt(out, HTS_OPT_THREAD_POOL, &p);
+}
+```
+
+这n个在等着decode的线程，一个用来分块的读线程，out的线程由于格式，没有打开
+
+```c
+if (!fd->h) {
+    printf("!fd->h\n");
+    // NB: discard const.  We don't actually modify sam_hdr_t here,
+    // just data pointed to by it (which is a bit weasely still),
+    // but out cached pointer must be non-const as we want to
+    // destroy it later on and sam_hdr_destroy takes non-const.
+    //
+    // We do this because some tools do sam_hdr_destroy; sam_close
+    // while others do sam_close; sam_hdr_destroy.  The former is an
+    // issue as we need the header still when flushing.
+    fd->h = (sam_hdr_t *) h;
+    fd->h->ref_count++;
+
+    if (pthread_create(&fd->dispatcher, NULL, sam_dispatcher_write, fp) != 0)
+        return -2;
+}
+```
+
+这里有一个写线程
+
+所以一共create了n+2个线程+main thread
+
+```c
+➜  Rabbitbam2fq git:(main) time ./fast -p $data/hg19/fastc.fq -@ 2 $data/hg19/SRR_sort.bam
+6 5
+in file /Users/ylf9811/Desktop/QCQCQC/data/hg19/SRR_sort.bam
+in file /Users/ylf9811/Desktop/QCQCQC/data/hg19/fastc.fq
+opts.nthreads 2
+tpool_worker ...
+tpool_worker ...
+thread number 64757760
+thread number 64221184
+bgzf_mt_reader ...
+thread number 65294336
+starting ...
+main
+thread number 269135360
+!fd->h
+sam_dispatcher_write...
+thread id 65830912
+total process 6814517 reads
+total print 6684853 reads
+kernel part cost 2.34990
+./fast -p $data/hg19/fastc.fq -@ 2 $data/hg19/SRR_sort.bam  5.34s user 1.04s system 200% cpu 3.182 total
+```
+
+
+
+暂时把输出去掉，光统计行数试试
+

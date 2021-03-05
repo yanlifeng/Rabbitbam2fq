@@ -24,7 +24,9 @@ DEALINGS IN THE SOFTWARE.  */
 
 #ifndef TEST_MAIN
 #define HTS_BUILDING_LIBRARY // Enables HTSLIB_EXPORT, see htslib/hts_defs.h
+
 #include <config.h>
+
 #endif
 
 #include <stdlib.h>
@@ -91,7 +93,7 @@ static int hts_tpool_add_result(hts_tpool_job *j, void *data) {
     pthread_mutex_lock(&q->p->pool_m);
 
     DBG_OUT(stderr, "%d: Adding result to queue %p, serial %"PRId64", %d of %d\n",
-            worker_id(j->p), q, j->serial, q->n_output+1, q->qsize);
+            worker_id(j->p), q, j->serial, q->n_output + 1, q->qsize);
 
     if (--q->n_processing == 0)
         pthread_cond_signal(&q->none_processing_c);
@@ -366,30 +368,30 @@ hts_tpool_process *hts_tpool_process_init(hts_tpool *p, int qsize, int in_only) 
     if (!q)
         return NULL;
 
-    pthread_cond_init(&q->output_avail_c,   NULL);
+    pthread_cond_init(&q->output_avail_c, NULL);
     pthread_cond_init(&q->input_not_full_c, NULL);
-    pthread_cond_init(&q->input_empty_c,    NULL);
-    pthread_cond_init(&q->none_processing_c,NULL);
+    pthread_cond_init(&q->input_empty_c, NULL);
+    pthread_cond_init(&q->none_processing_c, NULL);
 
-    q->p           = p;
-    q->input_head  = NULL;
-    q->input_tail  = NULL;
+    q->p = p;
+    q->input_head = NULL;
+    q->input_tail = NULL;
     q->output_head = NULL;
     q->output_tail = NULL;
     q->next_serial = 0;
     q->curr_serial = 0;
     q->no_more_input = 0;
-    q->n_input     = 0;
-    q->n_output    = 0;
-    q->n_processing= 0;
-    q->qsize       = qsize;
-    q->in_only     = in_only;
-    q->shutdown    = 0;
+    q->n_input = 0;
+    q->n_output = 0;
+    q->n_processing = 0;
+    q->qsize = qsize;
+    q->in_only = in_only;
+    q->shutdown = 0;
     q->wake_dispatch = 0;
-    q->ref_count   = 1;
+    q->ref_count = 1;
 
-    q->next        = NULL;
-    q->prev        = NULL;
+    q->next = NULL;
+    q->prev = NULL;
 
     hts_tpool_process_attach(p, q);
 
@@ -495,7 +497,7 @@ void hts_tpool_process_detach(hts_tpool *p, hts_tpool_process *q) {
  * The thread pool.
  */
 
-#define TDIFF(t2,t1) ((t2.tv_sec-t1.tv_sec)*1000000 + t2.tv_usec-t1.tv_usec)
+#define TDIFF(t2, t1) ((t2.tv_sec-t1.tv_sec)*1000000 + t2.tv_usec-t1.tv_usec)
 
 /*
  * A worker thread.
@@ -508,7 +510,9 @@ void hts_tpool_process_detach(hts_tpool *p, hts_tpool_process *q) {
  * are signalled to check again.
  */
 static void *tpool_worker(void *arg) {
-    hts_tpool_worker *w = (hts_tpool_worker *)arg;
+//    printf("tpool_worker ...\n");
+//    printf("thread number %d\n", pthread_self());
+    hts_tpool_worker *w = (hts_tpool_worker *) arg;
     hts_tpool *p = w->p;
     hts_tpool_job *j;
 
@@ -618,14 +622,14 @@ static void *tpool_worker(void *arg) {
         }
     }
 
- shutdown:
+    shutdown:
     pthread_mutex_unlock(&p->pool_m);
 #ifdef DEBUG
     fprintf(stderr, "%d: Shutting down\n", worker_id(p));
 #endif
     return NULL;
 
- err:
+    err:
 #ifdef DEBUG
     fprintf(stderr, "%d: Failed to add result\n", worker_id(p));
 #endif
@@ -669,7 +673,7 @@ static void wake_next_worker(hts_tpool_process *q, int locked) {
 
     int running = p->tsize - p->nwaiting;
     int sig = p->t_stack_top >= 0 && p->njobs > p->tsize - p->nwaiting
-        && (q->n_processing < q->qsize - q->n_output);
+              && (q->n_processing < q->qsize - q->n_output);
 
 //#define AVG_USAGE
 #ifdef AVG_USAGE
@@ -694,7 +698,7 @@ static void wake_next_worker(hts_tpool_process *q, int locked) {
     if (0) {
         printf("%d waiting, %d running, %d output, %d, arun %d => %d\t", p->njobs,
                running, q->n_output, q->qsize - q->n_output,
-               p->n_running/p->n_count, sig);
+               p->n_running / p->n_count, sig);
         int i;
         for (i = 0; i < p->tsize; i++)
             putchar("x "[p->t_stack[i]]);
@@ -763,7 +767,8 @@ hts_tpool *hts_tpool_init(int n) {
 
     return p;
 
- cleanup: {
+    cleanup:
+    {
         // Any threads started will be waiting for p->pool_m, so we can
         // stop them cleanly by setting p->shutdown, releasing the mutex and
         // waiting for them to finish.
@@ -800,7 +805,7 @@ int hts_tpool_size(hts_tpool *p) {
  *        -1 on failure
  */
 int hts_tpool_dispatch(hts_tpool *p, hts_tpool_process *q,
-                    void *(*func)(void *arg), void *arg) {
+                       void *(*func)(void *arg), void *arg) {
     return hts_tpool_dispatch3(p, q, func, arg, NULL, NULL, 0);
 }
 

@@ -2735,6 +2735,8 @@ static void *sam_dispatcher_read(void *vp) {
 // Takes encoded blocks of SAM off the thread results queue and writes them
 // to our output stream.
 static void *sam_dispatcher_write(void *vp) {
+//    printf("sam_dispatcher_write...\n");
+//    printf("thread id %d\n", pthread_self());
     htsFile *fp = vp;
     SAM_state *fd = fp->state;
     hts_tpool_result *r;
@@ -2946,6 +2948,10 @@ int sam_set_threads(htsFile *fp, int nthreads) {
 //        -1 on EOF,
 //       <-1 on error
 int sam_read1(htsFile *fp, sam_hdr_t *h, bam1_t *b) {
+//    if (random() % 99999 == 0) {
+//        printf("read main\n");
+//        printf("thread number %d\n", pthread_self());
+//    }
     switch (fp->format.format) {
         case bam: {
             int r = bam_read1(fp->fp.bgzf, b);

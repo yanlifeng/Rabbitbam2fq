@@ -109,6 +109,8 @@ int sam_loop(int argc, char **argv, int optind, struct opts *opts, htsFile *in, 
         }
     }
     printf("starting ...\n");
+//    printf("main\n");
+//    printf("thread number %d\n", pthread_self());
     double t0 = get_wall_time();
     int N = 0, M = 0;
     while ((r = sam_read1(in, h, b)) >= 0) {
