@@ -15,6 +15,7 @@
 #include "config.h"
 #include <cstdlib>
 #include <mutex>
+#include <libdeflate.h>
 #define BLOCK_HEADER_LENGTH 18
 #define BLOCK_FOOTER_LENGTH 8
 
@@ -48,6 +49,7 @@ inline int unpackInt16(const uint8_t *buffer);
 int load_block_from_cache(BGZF *fp, int64_t block_address);
 int check_header(const uint8_t *header);
 const char *bgzf_zerr(int errnum, z_stream *zs);
+//int bgzf_uncompress(uint8_t *dst, size_t *dlen,const uint8_t *src, size_t slen,uint32_t expected_crc);
 int bgzf_uncompress(uint8_t *dst, unsigned int *dlen,const uint8_t *src, unsigned int slen,uint32_t expected_crc);
 int fixup_missing_qname_nul(bam1_t *b) ;
 int block_decode_func(struct bam_block *comp,struct bam_block *un_comp);
@@ -77,6 +79,7 @@ public:
     void ReadComplete();
 public:
     BamBlockConfig *config;
+    mutex mtx_read;
     mutex mtx_compress;
     bam_block **buffer;
     int *compress;

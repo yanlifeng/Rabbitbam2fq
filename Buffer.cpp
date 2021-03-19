@@ -51,7 +51,7 @@ void Buffer::output(){
     //cout << "try to output" << endl;
     mtx.lock();
     while (write_bg!=write_ed){
-        this->fout->write(buffer[write[write_bg]],pos[write[write_bg]]);
+        //this->fout->write(buffer[write[write_bg]],pos[write[write_bg]]);
         capacity[cap_ed]=write[write_bg];
         cap_ed=(cap_ed+1)%config->write_number;
         write_bg=(write_bg+1)%config->write_number;

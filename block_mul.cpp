@@ -80,7 +80,7 @@ void consumer_pack(BamBlock *block,Buffer *buffer,int id){
         comp=block->getCompressdata();
         //printf("%d is get One compressed data\n",id);
         if (comp.second<0) {
-            printf("%d is Over\n",id);
+            //printf("%d is Over\n",id);
             break;
         }
         // bam_decode_func
@@ -124,18 +124,18 @@ void consumer_pack(BamBlock *block,Buffer *buffer,int id){
     buffer->complete_thread();
 }
 
-int main(){
+int main(int argc,char* argv[]){
     TDEF(fq)
     TSTART(fq)
     printf("Starting Running\n");
-    n_thread=7;
+    n_thread=atoi(argv[1]);
     samFile *sin;
     sam_hdr_t *hdr;
     bam1_t *b;
     ofstream fout;
     fout.open("./bam.fq");
     // /home/old_home/haoz/workspace/data/NC/NC_T_1.sorted.bam
-    if ((sin=sam_open("../bam2fq/SRR_sort.bam", "r"))==NULL){
+    if ((sin=sam_open("/home/old_home/haoz/workspace/data/NC/NC_T_1.sorted.bam", "r"))==NULL){
         printf("Can`t open this file!\n");
         return 0;
     }
@@ -145,9 +145,9 @@ int main(){
     if ((b = bam_init1()) == NULL) {
         fprintf(stderr, "[E::%s] Out of memory allocating BAM struct.\n", __func__);
     }
-    BufferConfig config(30,n_thread,10000000);
+    BufferConfig config(50,n_thread,10000000);
     Buffer buffer(&config,&fout);
-    BamBlockConfig bamconfig(1000);
+    BamBlockConfig bamconfig(6000);
     BamBlock block(&bamconfig);
     thread **Bam = new thread *[n_thread+2];
     Bam[0]=new thread(&read_pack,sin->fp.bgzf,&block);
@@ -165,4 +165,26 @@ int main(){
     TEND(fq)
     TPRINT(fq,"change time is : ");
 }
+
+/*
+ *  thread_number |    time    |   lib
+ *         1      |   1674     |   zlib
+ *         2      |    874     |   zlib
+ *         4      |    482     |   zlib
+ *         8      |    279     |   zlib
+ *        16      |    166     |   zlib
+ *        24      |    132     |   zlib
+ *        32      |    111     |   zlib
+ *
+ *  thread_number |    time    |   lib
+ *         1      |    865     |   libdeflate
+ *         2      |    494     |   libdeflate
+ *         4      |    304     |   libdeflate
+ *         8      |    190     |   libdeflate
+ *        16      |    138     |   libdeflate
+ *        24      |    111     |   libdeflate
+ *        30      |    104     |   libdeflate
+ *
+ *
+ */
 
