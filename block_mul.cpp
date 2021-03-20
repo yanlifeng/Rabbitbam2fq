@@ -115,7 +115,7 @@ void consumer_pack(BamBlock *block, Buffer *buffer, ThreadConfig *config) {
                     config->Bases[Idx[bam_seqi(seq, i)]]++;
             }
 
-
+            //TODO reference to htslib may faster
             if (is_write) {
                 seq = bam_get_seq(b);
                 long long len = strlen(bam_get_qname(b));
