@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="BQC"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="BQC">
+				<Option output="/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/BQC" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/ylf9811/ClionProjects/Rabbitbam2fq/htslib-1.11"/>
+					<Add directory="/usr/local/Cellar/libdeflate/1.6/include"/>
+					<Add directory="/usr/local/Cellar/gcc@8/8.4.0_1/lib/gcc/8/gcc/x86_64-apple-darwin19/8.4.0/../../../../../../include/c++/8.4.0"/>
+					<Add directory="/usr/local/Cellar/gcc@8/8.4.0_1/lib/gcc/8/gcc/x86_64-apple-darwin19/8.4.0/../../../../../../include/c++/8.4.0/x86_64-apple-darwin19"/>
+					<Add directory="/usr/local/Cellar/gcc@8/8.4.0_1/lib/gcc/8/gcc/x86_64-apple-darwin19/8.4.0/../../../../../../include/c++/8.4.0/backward"/>
+					<Add directory="/usr/local/Cellar/gcc@8/8.4.0_1/lib/gcc/8/gcc/x86_64-apple-darwin19/8.4.0/include"/>
+					<Add directory="/usr/local/Cellar/gcc@8/8.4.0_1/lib/gcc/8/gcc/x86_64-apple-darwin19/8.4.0/include-fixed"/>
+					<Add directory="/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/System/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 BQC"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="BQC/fast">
+				<Option output="/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/BQC" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/ylf9811/ClionProjects/Rabbitbam2fq/htslib-1.11"/>
+					<Add directory="/usr/local/Cellar/libdeflate/1.6/include"/>
+					<Add directory="/usr/local/Cellar/gcc@8/8.4.0_1/lib/gcc/8/gcc/x86_64-apple-darwin19/8.4.0/../../../../../../include/c++/8.4.0"/>
+					<Add directory="/usr/local/Cellar/gcc@8/8.4.0_1/lib/gcc/8/gcc/x86_64-apple-darwin19/8.4.0/../../../../../../include/c++/8.4.0/x86_64-apple-darwin19"/>
+					<Add directory="/usr/local/Cellar/gcc@8/8.4.0_1/lib/gcc/8/gcc/x86_64-apple-darwin19/8.4.0/../../../../../../include/c++/8.4.0/backward"/>
+					<Add directory="/usr/local/Cellar/gcc@8/8.4.0_1/lib/gcc/8/gcc/x86_64-apple-darwin19/8.4.0/include"/>
+					<Add directory="/usr/local/Cellar/gcc@8/8.4.0_1/lib/gcc/8/gcc/x86_64-apple-darwin19/8.4.0/include-fixed"/>
+					<Add directory="/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/usr/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/System/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 BQC/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/ylf9811/CLionProjects/ylf_bam2fq/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/Users/ylf9811/CLionProjects/ylf_bam2fq/BamBlock.cpp">
+			<Option target="BQC"/>
+		</Unit>
+		<Unit filename="/Users/ylf9811/CLionProjects/ylf_bam2fq/BamBlock.h">
+			<Option target="BQC"/>
+		</Unit>
+		<Unit filename="/Users/ylf9811/CLionProjects/ylf_bam2fq/Buffer.cpp">
+			<Option target="BQC"/>
+		</Unit>
+		<Unit filename="/Users/ylf9811/CLionProjects/ylf_bam2fq/Buffer.h">
+			<Option target="BQC"/>
+		</Unit>
+		<Unit filename="/Users/ylf9811/CLionProjects/ylf_bam2fq/block_mul.cpp">
+			<Option target="BQC"/>
+		</Unit>
+		<Unit filename="/Users/ylf9811/CLionProjects/ylf_bam2fq/threadconfig.cpp">
+			<Option target="BQC"/>
+		</Unit>
+		<Unit filename="/Users/ylf9811/CLionProjects/ylf_bam2fq/threadconfig.h">
+			<Option target="BQC"/>
+		</Unit>
+		<Unit filename="/Users/ylf9811/CLionProjects/ylf_bam2fq/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

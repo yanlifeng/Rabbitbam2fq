@@ -1,0 +1,1 @@
+g++-8 -lpthread -ldeflate -lz -Ofast -ffast-math -I$b2q/htslib-1.11 -I/usr/local/Cellar/libdeflate/1.6/include -L$b2q/HTSLIB/lib -L/usr/local/Cellar/libdeflate/1.6/lib -lhts block_mul.cpp Buffer.cpp Buffer.h BamBlock.cpp BamBlock.h threadconfig.cpp threadconfig.h -o main
