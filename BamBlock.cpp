@@ -171,7 +171,7 @@ const char *bgzf_zerr(int errnum, z_stream *zs)
             return buffer;  // FIXME: Not thread-safe.
     }
 }
-int bgzf_uncompress_z(uint8_t *dst, size_t *dlen,
+int bgzf_uncompress(uint8_t *dst, size_t *dlen,
                            const uint8_t *src, size_t slen,
                            uint32_t expected_crc) {
 //    printf("dst: %d   dlen: %d   src: %d   slen: %d   expected_crc: %d\n", dst[0], *dlen, src[0], slen, expected_crc);
@@ -199,7 +199,7 @@ int bgzf_uncompress_z(uint8_t *dst, size_t *dlen,
     return 0;
 }
 
-int bgzf_uncompress(uint8_t *dst, unsigned int *dlen,const uint8_t *src, unsigned int slen,uint32_t expected_crc)
+int bgzf_uncompress_z(uint8_t *dst, unsigned int *dlen,const uint8_t *src, unsigned int slen,uint32_t expected_crc)
 {
     z_stream zs = {
             .next_in = (Bytef*)src,
@@ -264,7 +264,7 @@ int block_decode_func(struct bam_block *comp,struct bam_block *un_comp) {
     un_comp->pos=0;
     un_comp->length=BGZF_MAX_BLOCK_SIZE;
     uint32_t crc = le_to_u32((uint8_t *)comp->data + comp->length-8);
-    int ret = bgzf_uncompress(un_comp->data, (&un_comp->length),
+    int ret = bgzf_uncompress(un_comp->data, reinterpret_cast<size_t *>(&un_comp->length),
                               comp->data+18, comp->length-18, crc);
     if (ret != 0) un_comp->errcode |= BGZF_ERR_ZLIB;
     return ret;
@@ -409,7 +409,7 @@ BamBlock::BamBlock(BamBlockConfig *config){
 }
 pair<bam_block *,int> BamBlock::getEmpty(){
     while (read_bg==read_ed){
-        this_thread::sleep_for(chrono::milliseconds(1));
+        this_thread::sleep_for(chrono::milliseconds(5));
     }
     int num=read_bg;
     read_bg=(read_bg+1)%config->write_number;
@@ -424,7 +424,7 @@ pair<bam_block *,int> BamBlock::getCompressdata(){
     mtx_compress.lock();
     while (compress_ed==compress_bg){
         mtx_compress.unlock();
-        this_thread::sleep_for(chrono::milliseconds(5));
+        this_thread::sleep_for(chrono::milliseconds(1));
         if (config->complete) return pair<bam_block *,int>(NULL,-1);
         mtx_compress.lock();
     }

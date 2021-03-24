@@ -37,8 +37,8 @@ uint8_t Base[16] = {0, 65, 67, 0, 71, 0, 0, 0, 84, 0, 0, 0, 0, 0, 0, 78};
 uint8_t BaseRever[16] = {0, 84, 71, 0, 67, 0, 0, 0, 65, 0, 0, 0, 0, 0, 0, 78};
 
 int n_thread=1;
-long long NUM_N[50]={0};
-long long NUM_M[50]={0};
+long long NUM_N[500]={0};
+long long NUM_M[500]={0};
 
 void read_pack(BGZF *fp,BamBlock *block){
     pair<bam_block *,int> b;
@@ -83,7 +83,6 @@ void consumer_pack(BamBlock *block,Buffer *buffer,int id){
             //printf("%d is Over\n",id);
             break;
         }
-        // bam_decode_func
         block_decode_func(comp.first,un_comp);
         block->backempty(comp.second);
         while (read_bam(un_comp,b,0)>=0) {
@@ -135,7 +134,8 @@ int main(int argc,char* argv[]){
     ofstream fout;
     fout.open("./bam.fq");
     // /home/old_home/haoz/workspace/data/NC/NC_T_1.sorted.bam
-    if ((sin=sam_open("/home/old_home/haoz/workspace/data/NC/NC_T_1.sorted.bam", "r"))==NULL){
+    // ../data/NC_T_1.sorted.bam
+    if ((sin=sam_open("../data/NC_N_1.sorted.bam", "r"))==NULL){
         printf("Can`t open this file!\n");
         return 0;
     }
@@ -145,9 +145,9 @@ int main(int argc,char* argv[]){
     if ((b = bam_init1()) == NULL) {
         fprintf(stderr, "[E::%s] Out of memory allocating BAM struct.\n", __func__);
     }
-    BufferConfig config(50,n_thread,10000000);
+    BufferConfig config(150,n_thread,10000000);
     Buffer buffer(&config,&fout);
-    BamBlockConfig bamconfig(6000);
+    BamBlockConfig bamconfig(20000);
     BamBlock block(&bamconfig);
     thread **Bam = new thread *[n_thread+2];
     Bam[0]=new thread(&read_pack,sin->fp.bgzf,&block);
@@ -157,8 +157,8 @@ int main(int argc,char* argv[]){
     for (int i=0;i<n_thread+2;i++)
         Bam[i]->join();
     long long N=0,M=0;
-    for (int i=0;i<50;i++) N+=NUM_N[i];
-    for (int i=0;i<50;i++) M+=NUM_M[i];
+    for (int i=0;i<=n_thread;i++) N+=NUM_N[i];
+    for (int i=0;i<=n_thread;i++) M+=NUM_M[i];
     printf("total read is %lld\n",N);
     printf("totol process is %lld\n",M);
     sam_close(sin);
@@ -167,6 +167,7 @@ int main(int argc,char* argv[]){
 }
 
 /*
+ * in 金牌
  *  thread_number |    time    |   lib
  *         1      |   1674     |   zlib
  *         2      |    874     |   zlib
@@ -186,5 +187,20 @@ int main(int argc,char* argv[]){
  *        30      |    104     |   libdeflate
  *
  *
+ *
+ * in AMD
+ *
+ *  thread_number |    time    |   lib
+ *         1      |    876     |   libdeflate
+ *         2      |    508     |   libdeflate
+ *         4      |    298     |   libdeflate
+ *         8      |    200     |   libdeflate
+ *        16      |    115     |   libdeflate
+ *        20      |     91     |   libdeflate
+ *        24      |     75     |   libdeflate
+ *        28      |     63     |   libdeflate
+ *        32      |     53     |   libdeflate
+ *        40      |     40     |   libdeflate
+ *        94      |     28     |   libdeflate
  */
 

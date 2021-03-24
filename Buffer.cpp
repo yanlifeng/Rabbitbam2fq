@@ -33,7 +33,9 @@ pair<char*,int> Buffer::getCap() {
 
     mtx.lock();
     while (cap_ed==cap_bg){
+        mtx.unlock();
         this_thread::sleep_for(chrono::milliseconds(1));
+        mtx.lock();
     }
     int id=capacity[cap_bg];
     cap_bg=(cap_bg+1)%config->write_number;
